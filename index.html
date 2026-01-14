@@ -1,681 +1,1255 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DreamPlay — Day Hub</title>
+  <meta name="description" content="DreamPlay Day Hub — one screen daily rhythm: PNR → Buy → Liquidity (Polygon)." />
 
-  <!-- optional favicon to stop 404 -->
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B5%3C/text%3E%3C/svg%3E">
+  <!-- Optional icons (safe to 404) -->
+  <link rel="icon" href="/favicon.ico">
 
   <style>
     :root{
-      --bg:#0b0f19; --card:rgba(255,255,255,.06); --stroke:rgba(255,255,255,.12);
-      --text:#e8eefc; --muted:rgba(232,238,252,.72);
-      --good:#7CFC9A; --bad:#ff9aa2; --accent:#6ee7ff;
+      --bg:#f8fafc; --card:#fff; --border:#e5e7eb; --text:#111827; --muted:#6b7280;
+      --accent:#6b46c1; --accentSoft:#f5f3ff; --green:#22c55e; --blue:#3b82f6; --red:#ef4444;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text)}
-    .wrap{max-width:1040px;margin:0 auto;padding:22px}
-    .top{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;justify-content:space-between}
-    h1{margin:0;font-size:22px}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:var(--bg);color:var(--text)}
+    .container{max-width:1040px;margin:0 auto;padding:18px}
+    .row{display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:14px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    h1{margin:0;font-size:1.25rem}
+    h2{margin:.1rem 0 .6rem;font-size:1.05rem}
+    h3{margin:.1rem 0 .4rem;font-size:1rem}
+    .small{font-size:.92rem}
     .muted{color:var(--muted)}
-    .card{background:var(--card);border:1px solid var(--stroke);border-radius:16px;padding:16px;margin:14px 0}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    @media (max-width:900px){.grid2{grid-template-columns:1fr}}
-    .pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.08);font-size:12px}
-    .dot{width:8px;height:8px;border-radius:999px;background:rgba(255,255,255,.35)}
-    .dot.good{background:var(--good)}
-    .dot.bad{background:var(--bad)}
-    button{cursor:pointer;border:0;border-radius:12px;padding:10px 12px;font-weight:800}
-    .primary{background:var(--accent);color:#071019}
-    .secondary{background:rgba(255,255,255,.12);color:var(--text);border:1px solid rgba(255,255,255,.18)}
-    input,select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);color:var(--text);border-radius:12px;padding:10px 12px}
-    pre{margin:10px 0 0;background:rgba(0,0,0,.25);border:1px solid var(--stroke);border-radius:12px;padding:12px;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
-    a{color:var(--accent)}
-    .task h3{margin:0 0 6px;font-size:16px}
-    .task p{margin:0;color:var(--muted);font-size:13px;line-height:1.35}
-    .task .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-    #confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;display:none}
-    .c{position:absolute;top:-10px;width:10px;height:14px;opacity:.95}
-    code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+    .soft{background:#f3f4f6;border-radius:10px;padding:10px}
+    a{color:var(--accent);text-decoration:none}
+    .badge{display:inline-block;padding:3px 10px;border:1px solid #d6bcfa;background:var(--accentSoft);border-radius:999px;font-weight:650;font-size:.85rem;white-space:nowrap}
+    .pill{display:inline-block;padding:4px 10px;border-radius:999px;font-size:.82rem;border:1px solid var(--border);background:#f3f4f6;color:#4b5563}
+    .pill-green{background:#ecfdf5;color:#166534;border-color:#bbf7d0}
+    .pill-red{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+    button{padding:10px 16px;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:.95rem}
+    .btn-primary{background:var(--accent);color:#fff}
+    .btn-green{background:var(--green);color:#fff}
+    .btn-blue{background:var(--blue);color:#fff}
+    .btn-soft{background:#f3f4f6;color:var(--text);border:1px solid var(--border)}
+    .btn-danger{background:var(--red);color:#fff}
+    input,select,textarea{padding:10px;border:1px solid #cbd5e1;border-radius:12px;font-size:.95rem;width:100%}
+    textarea{min-height:76px;resize:vertical}
+    .grow{flex:1 1 auto;min-width:240px}
+    .nav{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;padding:10px 0 14px;border-bottom:1px solid var(--border)}
+    .nav a{padding:6px 10px;border-radius:999px;border:1px solid #e9d5ff;background:var(--accentSoft);font-weight:700;font-size:.9rem}
+    .videoWrap{position:relative;display:inline-block;max-width:100%}
+    .videoWrap iframe{max-width:100%;border-radius:12px}
+    .videoCover{position:absolute;inset:0;cursor:pointer;border-radius:12px}
+    code{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:.9em}
+    .hr{height:1px;background:var(--border);margin:10px 0}
+    details{background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px}
+    @media (max-width:640px){ h1{font-size:1.08rem} }
   </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js" crossorigin="anonymous"></script>
+<script>
+  // Fallback if a browser blocks cdnjs or ethers fails to load
+  (function(){
+    if (typeof ethers !== "undefined") return;
+    var s=document.createElement("script");
+    s.src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js";
+    s.onload=function(){ console.log("Ethers loaded via fallback"); };
+    s.onerror=function(){ console.error("Failed to load ethers"); };
+    document.head.appendChild(s);
+  })();
+</script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
+
 <body>
-  <div id="confetti"></div>
-
-  <div class="wrap">
-    <div class="top">
-      <div>
-        <h1>DreamPlay — Day Hub</h1>
-        <div class="muted">One screen. Same order every day: 🌱 PNR → 🔁 Buy → 💧 Liquidity. All green = confetti + Kept Today.</div>
+  <div class="container">
+    <div class="row" style="justify-content:space-between;gap:12px;">
+      <div class="row" style="gap:12px;">
+        <img src="data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="160" height="48"%3E%3Crect width="160" height="48" rx="10" fill="%23111827"/%3E%3Ctext x="14" y="30" font-family="Arial" font-size="20" fill="%23fff"%3EDreamPlay%3C/text%3E%3C/svg%3E" alt="DreamPlay" style="height:44px;width:auto;border-radius:10px" onerror="this.style.display='none'">
+        <div>
+          <h1>DreamPlay — Day Hub</h1>
+          <div class="small muted">One screen. Same order every day: 🌱 PNR → 🔁 Buy → 💧 Liquidity.</div>
+        </div>
       </div>
-      <div class="row">
-        <span class="pill"><span class="dot" id="dotWallet"></span> Wallet: <span id="addrLabel">—</span></span>
-        <span class="pill"><span class="dot" id="dotNet"></span> Chain: <span id="netLabel">—</span></span>
-        <span class="pill"><span class="dot good"></span> UTC dayId: <span id="dayLabel">—</span></span>
-        <span class="pill"><span class="dot" id="dotKept"></span> Kept Today: <span id="keptLabel">—</span></span>
-      </div>
+      <span class="badge" id="utcDayBadge">UTC Day: —</span>
     </div>
 
-    <div class="card">
-      <div class="row" style="justify-content:space-between">
-        <strong>Wallet</strong>
+    <nav class="nav" aria-label="DreamPlay navigation">
+      <a href="https://believers-stadium-live.netlify.app/" target="_blank" rel="noopener">Stadium</a>
+      <a href="https://dreamplay-gsl-launchpad.netlify.app/" target="_blank" rel="noopener">Token Factory</a>
+      <a href="https://dreamplay-mappass-storematrix.netlify.app/" target="_blank" rel="noopener">Mappass Id</a>
+      <a href="https://dreamplay-community-owned-liquidity.netlify.app/" target="_blank" rel="noopener">Liquidity App</a>
+    </nav>
+
+    <!-- Wallet -->
+    <section class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;">
         <div class="row">
-          <button class="secondary" id="btnConnect">Connect MetaMask</button>
-          <button class="secondary" id="btnResetDay">Reset local receipts</button>
+          <button id="connectBtn" class="btn-primary">Connect MetaMask</button>
+          <a id="openInMM" href="https://metamask.app.link/dapp/YOUR_DOMAIN_HERE/"
+             class="badge" style="display:none;border-color:#cbd5e1;background:#fff">Open in MetaMask (mobile)</a>
         </div>
-      </div>
-      <div class="muted" style="margin-top:8px">Tip: open the live Netlify URL (https). MetaMask won’t connect from a local <code>file://</code> page.</div>
-      <pre id="log"></pre>
-    </div>
-
-    <div class="card">
-      <strong>Step 1 — 🌱 PNR (Watch)</strong>
-      <div class="muted" style="margin-top:6px">
-        Uses the <b>new on-chain format</b>: Netlify signs a digest, then we call
-        <code>claim(dayId, videoIdBytes32, expiresAt, sig)</code>.
+        <span id="connStatus" class="small">Not connected</span>
       </div>
 
-      <div class="grid2" style="margin-top:12px">
-        <div class="card" style="margin:0">
-          <div class="task">
-            <div>
-              <div class="row" style="justify-content:space-between">
-                <h3 style="margin:0">Claim PNR</h3>
-                <span class="pill"><span class="dot" id="dotPNR"></span> <span id="pnrLabel">—</span></span>
-              </div>
-              <p>Click claim after you’ve watched. The claim tx is the proof (on-chain <code>PnrReceiptOk</code>).</p>
-              <div class="muted" style="margin-top:10px">
-                Expiry seconds (60–3600):
-                <input id="expInput" value="900" inputmode="numeric" style="width:120px"/>
-              </div>
-            </div>
-            <div class="actions">
-              <button class="primary" id="btnPnrClaim" disabled>I Watched Today (Claim)</button>
-              <button class="secondary" id="btnPnrCheck" disabled>Check last</button>
-            </div>
-          </div>
-          <div class="muted" style="margin-top:10px">Last PNR tx: <span id="pnrTx">—</span></div>
-        </div>
+      <div class="row" style="margin-top:.5rem">
+        <span class="badge">Polygon • Chain 137</span>
+        <span class="badge" id="rpcBadge">RPC: —</span>
+        <span class="badge" id="hubBadge">Hub: —</span>
+        <span class="badge" id="zapperBadge">Zapper: —</span>
+      </div>
 
-        <div class="card" style="margin:0">
-          <div class="task">
-            <div>
-              <h3 style="margin:0 0 6px">PNR turns green when…</h3>
-              <p>The tx confirms, and the receipt contains <code>PnrReceiptOk(address,uint32,bytes32)</code> with topic1 == your wallet.</p>
-              <p class="muted" style="margin-top:8px">If you see <code>DAYID_MISMATCH</code>, the signer payload dayId didn’t match your client dayId (off-by-one protection).</p>
-            </div>
+      <div class="row" style="margin-top:.5rem;align-items:flex-start;">
+        <div class="soft grow">
+          <div class="small"><strong>Today:</strong> <span id="todayText">—</span></div>
+          <div class="small muted" style="margin-top:.25rem;">
+            Status is “boring + reliable”: PNR + Buy are tracked on-chain soon; Liquidity is verified by tx receipt log today.
           </div>
+          <div class="row" style="margin-top:.5rem;gap:.5rem;">
+            <span id="todayCompletePill" class="pill">Today Complete: —</span>
+            <button id="resetDevBtn" class="btn-soft" title="Only clears local dev receipts for this wallet/day">Reset local receipts</button>
+          </div>
+          <div id="topWarn" class="small muted" style="margin-top:.4rem;"></div>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <strong>Step 2 — 🔁 Buy through BuyHelper</strong>
-      <div class="muted" style="margin-top:6px">Verify by reading receipt logs from your buy tx. Auto-verify uses Polygonscan (optional key).</div>
+    <!-- Belief Chain & Sponsor -->
+    <section class="card">
+      <h2>Belief Chain & Sponsor</h2>
+      <p class="small muted">One-time prerequisite for all DreamPlay apps: accept COB + set a valid sponsor (Anchor/launched member).</p>
 
-      <div class="grid2" style="margin-top:12px">
-        <div class="card" style="margin:0">
-          <div class="task">
-            <div>
-              <div class="row" style="justify-content:space-between">
-                <h3 style="margin:0">Buy status</h3>
-                <span class="pill"><span class="dot" id="dotBuy"></span> <span id="buyLabel">—</span></span>
-              </div>
-              <div class="row" style="margin-top:10px">
-                <button class="secondary" id="btnBuyOpen">Open BuyHelper</button>
-                <button class="secondary" id="btnBuyAuto" disabled>Auto-Verify Today</button>
-              </div>
-              <div class="muted" style="margin-top:10px">Paste buy tx hash:</div>
-              <div class="row" style="margin-top:8px">
-                <input id="buyTxInput" placeholder="0x..." style="flex:1;min-width:240px"/>
-                <button class="primary" id="btnBuyCheck" disabled>Check Tx</button>
-              </div>
-              <div class="muted" style="margin-top:10px">Last buy tx: <span id="buyTx">—</span></div>
-            </div>
-          </div>
+      <div class="soft small" style="max-height:160px;overflow:auto;">
+        <strong>Certificate of Belief (COB)</strong>
+        <div id="cobTextContent" style="margin-top:.25rem;">Loading Core Values…</div>
+      </div>
+
+      <div class="row" style="margin-top:.75rem;align-items:center;">
+        <button id="acceptCobBtn" class="btn-green">Accept COB</button>
+        <span id="cobStatus" class="small muted">Status: unknown</span>
+      </div>
+
+      <div style="margin-top:1rem;">
+        <h3>My Sponsor</h3>
+        <div class="row" style="gap:.5rem;">
+          <input id="sponsorInput" class="grow" placeholder="Sponsor address (0x…)" />
+          <button id="setSponsorBtn" class="btn-soft">Set Sponsor (once)</button>
         </div>
-
-        <div class="card" style="margin:0">
-          <div class="task">
-            <div>
-              <h3 style="margin:0 0 6px">Buy verification rule</h3>
-              <p>We look for a receipt log matching <code id="buyEventLabel"></code> (topic0) and your wallet (topic1).</p>
-              <p class="muted" style="margin-top:8px">If you don't use Polygonscan key, paste tx hash and click “Check Tx”.</p>
-            </div>
-          </div>
+        <div class="row" style="margin-top:.4rem;gap:.5rem;">
+          <span id="sponsorChainStatus" class="small muted">Sponsor: (not set)</span>
+        </div>
+        <div class="row" style="margin-top:.25rem;">
+          <span id="beliefMemberStatus" class="small pill">Belief Chain status: unknown</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
-      <strong>Step 3 — 💧 Liquidity (Ad Liquidity)</strong>
-      <div class="muted" style="margin-top:6px">Verify by finding <code>HubReceiptOk(address)</code> in your deposit tx receipt logs.</div>
+    <!-- Step 1 -->
+    <section class="card">
+      <h2>Step 1 — 🌱 PNR (Watch)</h2>
+      <p class="small muted">
+        Watch the daily video. Gate: <strong>60s watched</strong> and <strong>50% progress</strong>.
+        When eligible, you can claim.
+        <span class="badge" style="margin-left:.4rem;border-color:#cbd5e1;background:#fff">PNR is on-chain ✅</span>
+      </p>
 
-      <div class="grid2" style="margin-top:12px">
-        <div class="card" style="margin:0">
-          <div class="task">
-            <div>
-              <div class="row" style="justify-content:space-between">
-                <h3 style="margin:0">Liquidity status</h3>
-                <span class="pill"><span class="dot" id="dotLiq"></span> <span id="liqLabel">—</span></span>
-              </div>
-              <div class="row" style="margin-top:10px">
-                <button class="secondary" id="btnLiqOpen">Open Liquidity App</button>
-                <button class="secondary" id="btnLiqAuto" disabled>Auto-Verify Today</button>
-              </div>
-              <div class="muted" style="margin-top:10px">Paste deposit tx hash:</div>
-              <div class="row" style="margin-top:8px">
-                <input id="liqTxInput" placeholder="0x..." style="flex:1;min-width:240px"/>
-                <button class="primary" id="btnLiqCheck" disabled>Check Tx</button>
-              </div>
-              <div class="muted" style="margin-top:10px">Last liquidity tx: <span id="liqTx">—</span></div>
+      <div class="row">
+        <div class="videoWrap">
+          <iframe
+            id="video"
+            width="560"
+            height="315"
+            src="https://www.youtube.com/embed/olQrCfkvbGw?rel=0&enablejsapi=1&playsinline=1"
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen
+          ></iframe>
+          <div id="videoCover" class="videoCover" title="Click to start watching"></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:.75rem;">
+        <button id="pnrClaimBtn" class="btn-blue" disabled>I Watched Today (Claim)</button>
+        <button id="pnrCheckBtn" class="btn-soft">Check</button>
+        <span id="pnrClaimStatus" class="small">Watch at least <b>60s and 50%</b> to enable claim.</span>
+      </div>
+      <div class="row" style="margin-top:.25rem;">
+        <span id="pnrGateDebug" class="small muted"></span>
+        <span id="pnrReceipt" class="small muted"></span>
+      </div>
+
+      <div class="soft small" style="margin-top:10px">
+        <div><strong>On-chain upgrade hook (next)</strong></div>
+        <div class="muted">
+          Replace <code>saveLocalReceipt("pnr")</code> with a contract call (ex: <code>PNRClaimer.claim()</code>) that emits an on-chain receipt event.
+          The UI can verify by reading that tx receipt (same pattern as Liquidity).
+        </div>
+      </div>
+    </section>
+
+    <!-- Step 2 -->
+      <section class="card" id="step2">
+        <h2>Step 2 — 🔁 Buy (Week 1: DPLIQXJL)</h2>
+        <p class="muted">
+          For Week 1, everyone does <b>one small on-chain buy</b> of the mothership token <b>DPLIQXJL</b>.
+          This makes the step feel “official” because it emits an on-chain receipt event your Day Hub can verify via the tx receipt logs.
+        </p>
+
+        <div class="grid2">
+          <div class="card2">
+            <div class="label">Week 1 target (fixed)</div>
+            <div class="mono small">Buy: USDC → DPLIQXJL (QuickSwap v2)</div>
+            <div class="small muted">Cap is enforced in the BuyHelper contract (you can set it low so “size doesn’t matter”).</div>
+
+            <div class="row" style="margin-top:10px">
+              <input id="buy_usdc" type="number" min="0" step="0.01" placeholder="USDC amount (e.g. 1)" />
+              <button id="btnBuyQuote" class="btn secondary">Quote</button>
             </div>
+
+            <div class="small muted" id="buyQuoteOut" style="margin-top:8px">Quote: —</div>
+
+            <div class="row" style="margin-top:10px">
+              <button id="btnApproveUSDC" class="btn secondary">Approve USDC</button>
+              <button id="btnBuyOnchain" class="btn">Buy on-chain</button>
+            </div>
+
+            <div class="small muted" style="margin-top:8px">
+              If you prefer manual: 
+              <a id="qsLink" href="#" target="_blank" rel="noreferrer">Open QuickSwap (USDC → DPLIQXJL)</a>
+              <span class="muted"> (this is the direct swap URL, not the launch page)</span>
+            </div>
+
+            <div class="status" id="buyStatus" style="margin-top:10px">Status: —</div>
+          </div>
+
+          <div class="card2">
+            <div class="label">Buy proof (idiot-proof)</div>
+            <div class="small muted">
+              We verify this step by reading the tx receipt logs and finding <span class="mono">Week1BuyReceiptOk</span>.
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <button id="btnBuyAutoVerify" class="btn secondary">Auto-Verify Today</button>
+              <button id="btnBuyTestScan" class="btn secondary">Test Polygonscan</button>
+            </div>
+
+            <div class="small" style="margin-top:10px">
+              Latest buy tx (today): <span class="mono" id="buyLatestTx">—</span><br/>
+              Block: <span class="mono" id="buyLatestBlock">—</span><br/>
+              Proof: <span class="mono">Week1BuyReceiptOk(topic1==wallet)</span>
+            </div>
+
+            <div class="row" style="margin-top:10px">
+              <input id="buyTxInput" class="mono" placeholder="Paste a buy tx hash (0x…)" />
+              <button id="btnBuyCheckTx" class="btn secondary">Check Tx</button>
+            </div>
+
+            <div class="status" id="buyVerifyStatus" style="margin-top:10px">Status: —</div>
           </div>
         </div>
 
-        <div class="card" style="margin:0">
-          <div class="task">
-            <div>
-              <h3 style="margin:0 0 6px">Liquidity verification rule</h3>
-              <p>We look for <code>HubReceiptOk(address)</code> (topic0) and your wallet (topic1).</p>
-            </div>
+        <details style="margin-top:10px">
+          <summary class="small muted">Notes (Week 1 mode)</summary>
+          <div class="small muted" style="margin-top:6px">
+            - This uses a <b>BuyHelper contract</b>. If you haven’t deployed it yet, the buttons will show “not configured”.<br/>
+            - After your factory migration, we’ll switch this panel back to “buy my token” (DPLIQXJL → my token) using the same receipt-verification pattern.
+          </div>
+        </details>
+
+        <hr style="margin:18px 0; border:none; border-top:1px solid rgba(255,255,255,.08)">
+
+        <h3 class="h3">Rhythm Keeper Registration (one-time)</h3></h3>
+        <p class="muted" style="margin-top:0;">
+          Register the token you are “keeping the rhythm for” (the project token you’re supporting). This is used for coordination + reporting (and later, we can anchor it on-chain).
+        </p>
+
+        <div class="row" style="flex-wrap:wrap; gap:10px;">
+          <div style="min-width:320px; flex:1;">
+            <label class="label">Rhythm token (project token address)</label>
+            <input id="rhythmTokenInput" class="input" placeholder="0x… token address" />
+            <div class="help">Example: your community token from the factory. You can update this anytime for now.</div>
+          </div>
+          <div style="min-width:220px;">
+            <label class="label">&nbsp;</label>
+            <button id="saveRhythmBtn" class="btn">Save Rhythm Token</button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <div class="card">
-      <strong>Permanent — Register your support to a Rhythm</strong>
-      <div class="muted" style="margin-top:6px">Stored in your browser per wallet (upgrade to on-chain later).</div>
-
-      <div class="row" style="margin-top:12px;justify-content:space-between">
-        <div class="row" style="gap:12px">
-          <select id="rhythmSelect">
-            <option value="Rhythm: Watch + Claim">Rhythm: Watch + Claim</option>
-            <option value="Rhythm: BuyHelper">Rhythm: BuyHelper</option>
-            <option value="Rhythm: Add Liquidity">Rhythm: Add Liquidity</option>
-            <option value="Rhythm: All Three Daily">Rhythm: All Three Daily</option>
-          </select>
-          <button class="primary" id="btnSaveSupport" disabled>Save Support</button>
+        <div class="row" style="margin-top:10px; gap:10px; flex-wrap:wrap;">
+          <span class="pill">Saved rhythm token: <span id="rhythmSaved">—</span></span>
         </div>
-        <span class="pill"><span class="dot" id="dotSupport"></span> <span id="supportLabel">—</span></span>
-      </div>
-    </div>
 
-    <div class="card">
-      <strong>Config</strong>
-      <div class="muted" style="margin-top:6px">Edit constants in the script if addresses/event names change.</div>
-      <pre id="cfg"></pre>
-    </div>
+        <details style="margin-top:10px;">
+          <summary class="muted">On-chain upgrade hook (next)</summary>
+          <div class="muted" style="margin-top:6px;">
+            Replace the local receipt + manual buy link with a BuyHelper tx that emits <code>BuyReceiptOk(user, dayId, tokenOut, amountIn, amountOut)</code>.
+            The Day Hub will verify Buy completion by reading that tx receipt logs (same pattern as Liquidity).
+          </div>
+        </details>
+      </section>
+
+      <!-- Step 3 -->
+    <section class="card">
+      <h2>Step 3 — 💧 Liquidity (USDC → matched DPLIQXJL)</h2>
+      <p class="small muted">
+        Deposit in the Liquidity App. The Zapper emits <code>HubReceiptOk(address)</code>.
+        This panel auto-verifies by finding your latest deposit tx today via Polygonscan (v2), then checking the receipt logs.
+      </p>
+
+      <div class="row" style="gap:.6rem;">
+        <button id="openLiqBtn" class="btn-blue">Open Liquidity App</button>
+        <button id="liqAutoBtn" class="btn-soft">Auto-Verify Today</button>
+        <button id="psTestBtn" class="btn-soft">Test Polygonscan</button>
+        <span id="liqStatus" class="small muted">Status: —</span>
+      </div>
+
+      <div class="soft small" style="margin-top:10px">
+        <div><strong>Latest deposit tx (today):</strong> <span id="liqTx">—</span></div>
+        <div><strong>Block:</strong> <span id="liqBlock">—</span></div>
+        <div><strong>Method:</strong> addMatchedLiquidity (<code>0x8f821438</code>)</div>
+        <div><strong>Proof:</strong> HubReceiptOk(topic1==wallet)</div>
+        <div class="hr"></div>
+        <div class="row">
+          <input id="liqTxInput" class="grow" placeholder="Optional: paste a deposit tx hash (0x…) then click Check Tx" />
+          <button id="liqCheckBtn" class="btn-soft">Check Tx</button>
+        </div>
+        <div class="row" style="margin-top:.5rem;">
+          <a id="openTxLink" href="#" target="_blank" rel="noopener" style="display:none">Open tx</a>
+          <span class="muted small" id="liqProofLine"></span>
+        </div>
+      </div>
+
+      <details style="margin-top:10px">
+        <summary class="small" style="cursor:pointer;font-weight:700">Show raw diagnostics</summary>
+        <pre id="diag" class="small muted" style="white-space:pre-wrap;margin:10px 0 0">—</pre>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Today Complete</h2>
+      <div class="row">
+        <span class="small">Complete all three steps to get your “boring repeatable” daily done: PNR ✅ + Buy ✅ + Liquidity ✅.</span>
+      </div>
+      <div class="row" style="margin-top:.6rem;">
+        <button id="testConfettiBtn" class="btn-soft">Test Confetti</button>
+        <span id="completeLine" class="small muted"></span>
+      </div>
+      <div class="small muted" style="margin-top:.6rem">
+        Important: If you open this page as a local file (file://), MetaMask won’t connect. Deploy to https (Netlify) and open the live URL.
+      </div>
+    </section>
   </div>
 
-  <script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
-  <script>
-    /**********************
-     * CONFIG (EDIT ME)
-     **********************/
-    const CONFIG = {
-      CHAIN_ID: 137,
-      CHAIN_HEX: "0x89",
+<script>
+(() => {
+  // -----------------------------
+  // CONFIG (update these)
+  // -----------------------------
+  const CHAIN_ID_HEX = "0x89"; // Polygon
+  const HUB_ADDRESS  = "0x9fe95296418D427DC18a85A46aEA625113c510A5";
+  const ZAPPER_ADDR  = "0x63C039186936fA9aFEe93a3B58F327fBa5754600";
+  const POLYSCAN_KEY = (window.POLYGONSCAN_KEY || "TG2IUX9DQ5Q31IUXVTC481DHFVCYQ9NI15"); // ok to expose 
+const DPLIQXJL     = "0xA128Ad9940C4D4AD54890cBf20370B2F49204Ee5";
+  const USDC_ADDR    = "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359";
+  const WEEK1_BUY_FIXED = true; // set false when you re-enable “buy my token”
+// (rate-limited)
+  const POLYSCAN_V2  = "https://api.etherscan.io/v2/api"; // Etherscan V2 endpoint supports chainid=137
 
-      // DreamPlayPNRClaimer_V2 address
-      PNR_CONTRACT: "0xcB819189dD53FA65b5b15E979b5D6715752Acef9",
-      SIGN_ENDPOINT: "/.netlify/functions/pnr-sign",
+  // Sponsor Registry (COB + sponsor)
+  const REGISTRY_ADDRESS = "0xAf31D65A5B582258655F246F3098aE003e784AC1";
+  const REGISTRY_ABI = [
+    "function cobText() view returns (string)",
+    "function hasAcceptedCOB(address) view returns (bool)",
+    "function acceptCOB()",
+    "function setSponsor(address)",
+    "function sponsorOf(address) view returns (address)",
+    "function isBeliefChainMember(address) view returns (bool)",
+    "function isValidSponsor(address) view returns (bool)"
+  ];
 
-      // Convenience links (replace with real URLs)
-      BUYHELPER_URL: "https://dreamplay-rhythm-chain.netlify.app/",
-      LIQUIDITY_URL: "https://dreamplay-rhythm-chain.netlify.app/",
+  // Swap URL (manual)
+  const SWAP_URL = "https://quickswap.exchange/#/swap";
+  const LIQ_URL  = "https://dreamplay-community-owned-liquidity.netlify.app/";
 
-      // Receipt checks (RPC)
-      RPC_URL: "https://polygon-rpc.com",
+  // -----------------------------
+  // Helpers
+  // -----------------------------
+  const $ = (s)=>document.querySelector(s);
+  const on = (sel, evt, fn)=>{ const el = $(sel); if(el) el.addEventListener(evt, fn); };
+  const ZERO = "0x0000000000000000000000000000000000000000";
+  const isAddr = (x)=> /^0x[a-fA-F0-9]{40}$/i.test(x || "");
+  const short = (a)=> a ? a.slice(0,6)+"…"+a.slice(-4) : "";
 
-      // Optional Polygonscan key for auto-verify. If empty, auto-verify buttons stay disabled.
-      POLYGONSCAN_API_KEY: "TG2IUX9DQ5Q31IUXVTC481DHFVCYQ9NI15",
+  function utcDayLabel(d){
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const da = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${da}`;
+  }
+  const TODAY_UTC = utcDayLabel(new Date());
+  $("#utcDayBadge").textContent = "UTC Day: " + TODAY_UTC;
+  $("#todayText").textContent = TODAY_UTC;
 
-      // Event signatures (topic0)
-      HUB_RECEIPT_EVENT: "HubReceiptOk(address)",
-      BUY_RECEIPT_EVENT: "Week1BuyReceiptOk(address)",
+  function storageKey(kind, wallet){
+    // key per chain + hub + day + wallet (prevents “auto-complete” bleeding across days/wallets)
+    return `dp:${kind}:137:${HUB_ADDRESS}:${TODAY_UTC}:${(wallet||"").toLowerCase()}`;
+  }
+  function loadLocalReceipt(kind, wallet){
+    try{
+      const v = localStorage.getItem(storageKey(kind, wallet));
+      return v === "1";
+    }catch(_){ return false; }
+  }
+  function saveLocalReceipt(kind, wallet){
+    try{ localStorage.setItem(storageKey(kind, wallet), "1"); }catch(_){}
+  }
+  function clearLocalReceipts(wallet){
+    try{
+      ["pnr","buy"].forEach(k => localStorage.removeItem(storageKey(k, wallet)));
+    }catch(_){}
+  }
 
-      // PNR receipt event (from your contract)
-      PNR_RECEIPT_EVENT: "PnrReceiptOk(address,uint32,bytes32)"
-    };
-
-    // ABI for DreamPlayPNRClaimer_V2
-    const PNR_ABI = [
-      "function claim(uint32 dayId, bytes32 videoId, uint64 expiresAt, bytes sig) external returns (bytes32)"
-    ];
-
-    /**********************
-     * Helpers
-     **********************/
-    const logEl = document.getElementById("log");
-    function logLine(...args){
-      const s = args.map(a => typeof a === "string" ? a : JSON.stringify(a, null, 2)).join(" ");
-      logEl.textContent = (logEl.textContent ? logEl.textContent + "\n" : "") + s;
-      logEl.scrollTop = logEl.scrollHeight;
+  function isMobile(){
+    return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+  }
+  function showOpenInMMIfNeeded(){
+    const link = $("#openInMM");
+    if(!link) return;
+    if (isMobile() && typeof window.ethereum === "undefined"){
+      link.style.display = "inline-block";
+    } else {
+      link.style.display = "none";
     }
-    function utcDayIdNow(){ return Math.floor(Math.floor(Date.now()/1000)/86400); }
-    function setDot(id, val){
-      const el = document.getElementById(id);
-      el.classList.remove("good","bad");
-      if (val === true) el.classList.add("good");
-      if (val === false) el.classList.add("bad");
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+  try {
+    showOpenInMMIfNeeded();
+    initProvider();
+    wireBuyWeek1UI();
+    updateAllStatus();
+  } catch(e) { console.error("Init failed", e); }
+});
+const POLYGON_PARAMS = {
+    chainId: CHAIN_ID_HEX,
+    chainName: "Polygon Mainnet",
+    nativeCurrency: { name:"MATIC", symbol:"MATIC", decimals:18 },
+    rpcUrls: ["https://rpc.ankr.com/polygon"],
+    blockExplorerUrls: ["https://polygonscan.com"]
+  };
+
+  // -----------------------------
+  // State
+  // -----------------------------
+  const state = {
+    wallet:"",
+    provider:null,
+    signer:null,
+    registry:null,
+    cobAccepted:false,
+    sponsor:ZERO,
+    beliefMember:false,
+    // completion
+    pnrDone:false,
+    buyDone:false,
+    liqDone:false,
+    liqTx:"",
+  };
+
+  $("#hubBadge").textContent = "Hub: " + short(HUB_ADDRESS);
+  $("#zapperBadge").textContent = "Zapper: " + short(ZAPPER_ADDR);
+  $("#rpcBadge").textContent = "RPC: polygonscan+rpc";
+
+  async function ensureEthereum(){
+    if(!window.ethereum){
+      alert("MetaMask not detected.\n\n• Desktop: install MetaMask extension\n• Mobile: open this site inside the MetaMask browser.");
+      throw new Error("No ethereum provider");
     }
-    function setText(id, s){ document.getElementById(id).textContent = s; }
+    return window.ethereum;
+  }
 
-    // local storage (daily)
-    function keyDay(wallet, dayId){ return `dp:dayhub:${(wallet||"anon").toLowerCase()}:day:${dayId}`; }
-    function getDayState(wallet, dayId){
-      try { return JSON.parse(localStorage.getItem(keyDay(wallet, dayId)) || "{}"); } catch { return {}; }
-    }
-    function setDayState(wallet, dayId, patch){
-      const prev = getDayState(wallet, dayId);
-      const next = Object.assign(
-        { pnr:false, buy:false, liq:false, confetti:false, pnrTx:"", buyTx:"", liqTx:"" },
-        prev,
-        patch
-      );
-      localStorage.setItem(keyDay(wallet, dayId), JSON.stringify(next));
-      return next;
-    }
-
-    // permanent support
-    function keySupport(wallet){ return `dp:support:${(wallet||"anon").toLowerCase()}`; }
-    function getSupport(wallet){ try { return JSON.parse(localStorage.getItem(keySupport(wallet)) || "null"); } catch { return null; } }
-    function setSupport(wallet, value){ localStorage.setItem(keySupport(wallet), JSON.stringify({ value, ts: Date.now() })); }
-
-    // confetti (no external libs)
-    function confettiOnce(){
-      const root = document.getElementById("confetti");
-      root.innerHTML = "";
-      root.style.display = "block";
-      const W = window.innerWidth;
-      const colors = ["#6ee7ff","#7CFC9A","#ffd166","#ff9aa2","#cdb4ff","#a7f3d0"];
-      for(let i=0;i<120;i++){
-        const d = document.createElement("div");
-        d.className = "c";
-        d.style.left = (Math.random()*W) + "px";
-        d.style.background = colors[Math.floor(Math.random()*colors.length)];
-        d.style.opacity = (0.6 + Math.random()*0.4).toFixed(2);
-        d.style.width = (6 + Math.random()*8).toFixed(0) + "px";
-        d.style.height = (8 + Math.random()*10).toFixed(0) + "px";
-        d.dataset.v = (2 + Math.random()*5).toFixed(2);
-        d.dataset.w = (-1 + Math.random()*2).toFixed(2);
-        root.appendChild(d);
-      }
-      let t = 0;
-      const tick = () => {
-        t += 1;
-        for(const d of root.children){
-          const v = parseFloat(d.dataset.v);
-          const w = parseFloat(d.dataset.w);
-          const top = (parseFloat(d.style.top||"-10") + v);
-          const left = (parseFloat(d.style.left) + w);
-          d.style.top = top + "px";
-          d.style.left = left + "px";
-        }
-        if (t < 160) requestAnimationFrame(tick);
-        else root.style.display = "none";
-      };
-      requestAnimationFrame(tick);
-    }
-
-    /**********************
-     * Wallet / Providers
-     **********************/
-    let provider, signer, userAddr;
-    let rpcProvider;
-
-    async function ensurePolygon(){
-      const net = await provider.getNetwork();
-      setText("netLabel", String(net.chainId));
-      setDot("dotNet", net.chainId === CONFIG.CHAIN_ID);
-      if (net.chainId === CONFIG.CHAIN_ID) return true;
+  async function ensurePolygon(eth){
+    const id = await eth.request({ method:"eth_chainId" });
+    if(id !== CHAIN_ID_HEX){
       try{
-        await window.ethereum.request({ method:"wallet_switchEthereumChain", params:[{ chainId: CONFIG.CHAIN_HEX }] });
-        const net2 = await provider.getNetwork();
-        setText("netLabel", String(net2.chainId));
-        setDot("dotNet", net2.chainId === CONFIG.CHAIN_ID);
-        return net2.chainId === CONFIG.CHAIN_ID;
+        await eth.request({ method:"wallet_switchEthereumChain", params:[{ chainId: CHAIN_ID_HEX }] });
       }catch(e){
-        logLine("Network switch failed:", e.message || e);
-        return false;
-      }
-    }
-
-    /**********************
-     * Receipt / Polygonscan helpers
-     **********************/
-    function topic0FromEventSig(sig){ return ethers.utils.id(sig); }
-    function topic1FromAddress(addr){
-      return "0x" + addr.toLowerCase().replace(/^0x/,"").padStart(64,"0");
-    }
-
-    async function checkReceiptForEvent(txHash, eventSig, walletAddr){
-      const receipt = await rpcProvider.getTransactionReceipt(txHash);
-      if (!receipt) return { ok:false, reason:"NO_RECEIPT_YET" };
-
-      const t0 = topic0FromEventSig(eventSig);
-      const t1 = topic1FromAddress(walletAddr);
-      for (const log of receipt.logs){
-        if (log.topics && log.topics.length >= 2 && log.topics[0].toLowerCase() === t0.toLowerCase()){
-          if (log.topics[1].toLowerCase() === t1.toLowerCase()){
-            return { ok:true, receipt, matchedLog: log };
-          }
+        if(e && e.code===4902){
+          await eth.request({ method:"wallet_addEthereumChain", params:[POLYGON_PARAMS] });
+        }else{
+          throw e;
         }
       }
-      return { ok:false, reason:"EVENT_NOT_FOUND", receipt };
     }
+  }
 
-    function todayUtcRange(){
-      const now = Math.floor(Date.now()/1000);
-      const start = Math.floor(now/86400)*86400;
-      const end = start + 86400 - 1;
-      return { start, end };
-    }
+  async function waitForEthers(timeoutMs=3000){
+  const start=Date.now();
+  while(typeof ethers==="undefined"){
+    if(Date.now()-start>timeoutMs) throw new Error("Ethers failed to load");
+    await new Promise(r=>setTimeout(r,50));
+  }
+}
 
-    async function polygonscanTxList(address, startTsSec, endTsSec){
-      if (!CONFIG.POLYGONSCAN_API_KEY) throw new Error("POLYGONSCAN_KEY_MISSING");
-      const base = "https://api.polygonscan.com/api";
-      const url = new URL(base);
-      url.searchParams.set("module","account");
-      url.searchParams.set("action","txlist");
-      url.searchParams.set("address", address);
-      url.searchParams.set("startblock","0");
-      url.searchParams.set("endblock","99999999");
-      url.searchParams.set("sort","desc");
-      url.searchParams.set("apikey", CONFIG.POLYGONSCAN_API_KEY);
+async function initProvider(){
+  await waitForEthers();
 
-      const r = await fetch(url.toString());
-      const j = await r.json();
-      if (j.status !== "1" && j.message !== "OK") throw new Error(j.result || "POLYGONSCAN_FAIL");
-      const arr = Array.isArray(j.result) ? j.result : [];
-      return arr.filter(tx => {
-        const ts = Number(tx.timeStamp||0);
-        return ts >= startTsSec && ts <= endTsSec;
-      });
-    }
+    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+    const signer = provider.getSigner();
+    state.provider = provider;
+    state.signer = signer;
+    state.registry = new ethers.Contract(REGISTRY_ADDRESS, REGISTRY_ABI, signer);
+  }
 
-    /**********************
-     * UI updates
-     **********************/
-    function renderConfig(){
-      document.getElementById("cfg").textContent = JSON.stringify(CONFIG, null, 2);
-      document.getElementById("buyEventLabel").textContent = CONFIG.BUY_RECEIPT_EVENT;
-    }
+  function setConnStatus(t){ $("#connStatus").textContent = t; }
 
-    function updateAllStatus(){
-      const dayId = utcDayIdNow();
-      setText("dayLabel", String(dayId));
+  // -----------------------------
+  // COB / Sponsor
+  // -----------------------------
+  async function loadCobAndSponsorState(){
+    const cobStatus = $("#cobStatus");
+    const sponsorStatus = $("#sponsorChainStatus");
+    const beliefStatus = $("#beliefMemberStatus");
+    const cobBoxText = $("#cobTextContent");
 
-      const state = getDayState(userAddr || "anon", dayId);
+    if(!state.registry || !isAddr(state.wallet)) return;
 
-      // PNR
-      setDot("dotPNR", !!state.pnr);
-      setText("pnrLabel", state.pnr ? "Done" : "Not done");
-      setText("pnrTx", state.pnrTx ? state.pnrTx : "—");
+    try{
+      try{
+        const txt = await state.registry.cobText();
+        if (cobBoxText) cobBoxText.textContent = txt || cobBoxText.textContent;
+      }catch(_){}
 
-      // Buy
-      setDot("dotBuy", !!state.buy);
-      setText("buyLabel", state.buy ? "Done" : "Not done");
-      setText("buyTx", state.buyTx ? state.buyTx : "—");
+      const [cob, sponsor, bc] = await Promise.all([
+        state.registry.hasAcceptedCOB(state.wallet),
+        state.registry.sponsorOf(state.wallet),
+        state.registry.isBeliefChainMember(state.wallet)
+      ]);
 
-      // Liquidity
-      setDot("dotLiq", !!state.liq);
-      setText("liqLabel", state.liq ? "Done" : "Not done");
-      setText("liqTx", state.liqTx ? state.liqTx : "—");
+      state.cobAccepted = cob;
+      state.sponsor = sponsor;
+      state.beliefMember = bc;
 
-      // Kept today + confetti
-      const kept = !!(state.pnr && state.buy && state.liq);
-      setDot("dotKept", kept);
-      setText("keptLabel", kept ? "Yes ✅" : "—");
+      cobStatus.textContent = cob ? "Status: COB accepted ✅" : "Status: COB not accepted";
+      cobStatus.className = cob ? "small" : "small";
+      cobStatus.style.color = cob ? "#16a34a" : "#dc2626";
 
-      if (kept && !state.confetti){
-        confettiOnce();
-        setDayState(userAddr || "anon", dayId, { confetti:true });
+      sponsorStatus.textContent = (sponsor && sponsor !== ZERO) ? `Sponsor: ${sponsor}` : "Sponsor: (not set)";
+      sponsorStatus.className = "small muted";
+
+      if(bc){
+        beliefStatus.textContent = "Belief Chain Member • COB accepted + sponsor set";
+        beliefStatus.className = "small pill pill-green";
+      }else{
+        beliefStatus.textContent = "Not yet a Belief Chain member";
+        beliefStatus.className = "small pill";
       }
 
-      // support
-      const sup = getSupport(userAddr || "anon");
-      if (sup?.value){
-        setDot("dotSupport", true);
-        setText("supportLabel", `Supporting: ${sup.value}`);
-      } else {
-        setDot("dotSupport", false);
-        setText("supportLabel", "No support registered");
-      }
+      const spInput = $("#sponsorInput");
+      if(spInput && sponsor && sponsor !== ZERO) spInput.value = sponsor;
 
-      // enable/disable
-      const connected = !!userAddr;
-      document.getElementById("btnPnrClaim").disabled = !connected;
-      document.getElementById("btnPnrCheck").disabled = !connected;
-      document.getElementById("btnBuyCheck").disabled = !connected;
-      document.getElementById("btnLiqCheck").disabled = !connected;
-      document.getElementById("btnSaveSupport").disabled = !connected;
-
-      const canAuto = connected && !!CONFIG.POLYGONSCAN_API_KEY;
-      document.getElementById("btnBuyAuto").disabled = !canAuto;
-      document.getElementById("btnLiqAuto").disabled = !canAuto;
+    }catch(e){
+      console.warn("Error loading COB/sponsor state", e);
     }
+  }
 
-    /**********************
-     * Actions
-     **********************/
-    async function postSignPayload({ user, dayId, expiresInSec }){
-      const resp = await fetch(CONFIG.SIGN_ENDPOINT, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ user, dayId, expiresInSec })
-      });
-      const data = await resp.json().catch(()=> ({}));
-      if (!resp.ok) throw new Error(data?.error || ("SIGN_HTTP_" + resp.status));
-      return data;
+  on("#acceptCobBtn", "click", async ()=>{
+    if(!state.registry || !isAddr(state.wallet)) return alert("Connect wallet first.");
+    try{
+      $("#cobStatus").textContent = "Submitting COB transaction…";
+      const tx = await state.registry.acceptCOB();
+      await tx.wait();
+      await loadCobAndSponsorState();
+    }catch(e){
+      alert(e?.message || "COB transaction failed");
     }
+  });
 
-    async function pnrClaim(){
-      if (!provider || !signer || !userAddr) throw new Error("Connect MetaMask first.");
-      const okNet = await ensurePolygon();
-      if (!okNet) throw new Error("Wrong network (need Polygon 137).");
+  on("#setSponsorBtn", "click", async ()=>{
+    if(!state.registry || !isAddr(state.wallet)) return alert("Connect wallet first.");
+    const sponsorRaw = ($("#sponsorInput").value || "").trim();
+    if(!isAddr(sponsorRaw)) return alert("Invalid sponsor address.");
+    if(!state.cobAccepted) return alert("Accept COB first.");
 
-      const dayId = utcDayIdNow();
-      const expiresInSec = Number(document.getElementById("expInput").value || "900");
-
-      logLine("Requesting signature payload…", { user: userAddr, dayId, expiresInSec });
-      const payload = await postSignPayload({ user:userAddr, dayId, expiresInSec });
-
-      // safety checks
-      if (Number(payload.dayId) !== Number(dayId)) throw new Error(`DAYID_MISMATCH (client ${dayId} vs signer ${payload.dayId})`);
-      const nowSec = Math.floor(Date.now()/1000);
-      if (Number(payload.expiresAt) <= nowSec) throw new Error(`SIGNATURE_EXPIRED (expiresAt ${payload.expiresAt}, now ${nowSec})`);
-
-      logLine("Signer payload:", payload);
-
-      const c = new ethers.Contract(CONFIG.PNR_CONTRACT, PNR_ABI, signer);
-      const tx = await c.claim(
-        Number(payload.dayId),
-        payload.videoIdBytes32,
-        Number(payload.expiresAt),
-        payload.sig
-      );
-
-      logLine("Tx sent:", tx.hash);
-      const receipt = await tx.wait();
-      logLine("Confirmed in block", receipt.blockNumber);
-
-      setDayState(userAddr, dayId, { pnr:true, pnrTx: tx.hash });
-      updateAllStatus();
+    try{
+      $("#sponsorChainStatus").textContent = "Checking sponsor validity…";
+      const valid = await state.registry.isValidSponsor(sponsorRaw);
+      if(!valid) return alert("Sponsor must be an Anchor or someone who has launched.");
+      $("#sponsorChainStatus").textContent = "Submitting sponsor transaction…";
+      const tx = await state.registry.setSponsor(sponsorRaw);
+      await tx.wait();
+      await loadCobAndSponsorState();
+    }catch(e){
+      alert(e?.message || "Sponsor transaction failed");
     }
+  });
 
-    async function pnrCheckLast(){
-      const dayId = utcDayIdNow();
-      const st = getDayState(userAddr, dayId);
-      if (!st.pnrTx) { logLine("No stored PNR tx for today."); return; }
+  // -----------------------------
+  // Step 1: Video gate
 
-      const res = await checkReceiptForEvent(st.pnrTx, CONFIG.PNR_RECEIPT_EVENT, userAddr);
-      if (res.ok){
-        logLine("PNR verified ✅", CONFIG.PNR_RECEIPT_EVENT, "found in receipt logs.");
-        setDayState(userAddr, dayId, { pnr:true });
-      } else {
-        logLine("PNR verify:", res.reason);
-      }
-      updateAllStatus();
-    }
+// PNR Claimer (Option B: signature -> on-chain receipt)
+const PNR_CLAIMER_ADDR = "0xcB819189dD53FA65b5b15E979b5D6715752Acef9";
+const PNR_CLAIMER_ABI = [
+  "function claim(uint32 dayId, bytes32 videoId, uint64 expiresAt, bytes sig) external returns (bytes32)",
+  "event PnrReceiptOk(address indexed user, uint32 indexed dayId, bytes32 videoId)"
+];
+const PNR_SIGN_ENDPOINT = "/.netlify/functions/pnr-sign";
 
-    async function buyCheckTx(txHash){
-      if (!txHash || !txHash.startsWith("0x")) throw new Error("Paste a valid tx hash.");
-      const dayId = utcDayIdNow();
-      const res = await checkReceiptForEvent(txHash, CONFIG.BUY_RECEIPT_EVENT, userAddr);
-      if (res.ok){
-        logLine("Buy verified ✅", CONFIG.BUY_RECEIPT_EVENT, "found in receipt logs.");
-        setDayState(userAddr, dayId, { buy:true, buyTx: txHash });
-      } else {
-        logLine("Buy verify:", res.reason);
-      }
-      updateAllStatus();
-    }
+const TOPIC_PNR_RECEIPT = ethers.utils.id("PnrReceiptOk(address,uint32)");
+  // -----------------------------
+  let player, duration=0, watched=0, playing=false, apiReady=false, started=false;
 
-    async function liqCheckTx(txHash){
-      if (!txHash || !txHash.startsWith("0x")) throw new Error("Paste a valid tx hash.");
-      const dayId = utcDayIdNow();
-      const res = await checkReceiptForEvent(txHash, CONFIG.HUB_RECEIPT_EVENT, userAddr);
-      if (res.ok){
-        logLine("Liquidity verified ✅", CONFIG.HUB_RECEIPT_EVENT, "found in receipt logs.");
-        setDayState(userAddr, dayId, { liq:true, liqTx: txHash });
-      } else {
-        logLine("Liquidity verify:", res.reason);
-      }
-      updateAllStatus();
-    }
+  on("#videoCover", "click", ()=>{
+    started = true;
+    $("#videoCover").style.display = "none";
+  });
 
-    async function buyAutoVerifyToday(){
-      const { start, end } = todayUtcRange();
-      const txs = await polygonscanTxList(userAddr, start, end);
-      if (!txs.length) { logLine("Polygonscan: no tx found today."); return; }
-
-      for (const tx of txs){
-        try{
-          const res = await checkReceiptForEvent(tx.hash, CONFIG.BUY_RECEIPT_EVENT, userAddr);
-          if (res.ok){
-            logLine("Auto-verified buy ✅ tx:", tx.hash, "block:", tx.blockNumber);
-            await buyCheckTx(tx.hash);
-            return;
+  window.onYouTubeIframeAPIReady = function(){
+    apiReady = true;
+    try{
+      player = new YT.Player("video", {
+        events: {
+          onReady: (e)=>{
+            try{ duration = e.target.getDuration() || 0; }catch(_){ duration = 0; }
+            updateGate();
+          },
+          onStateChange: (e)=>{
+            if(e.data === YT.PlayerState.PLAYING) playing = true;
+            else { if(playing){ playing=false; updateGate(); } }
           }
-        }catch(_){}
-      }
-      logLine("Auto-verify buy: no matching receipt event found in today's txs.");
+        }
+      });
+    }catch(e){
+      $("#pnrGateDebug").textContent = "YT init error: " + (e?.message || e);
+    }
+  };
+
+  setInterval(()=>{
+    if(started && playing){
+      watched += 0.5;
+      updateGate();
+    }
+  }, 500);
+
+  function eligibleNow(){
+    if(!started) return false;
+    let pct = 0;
+    try{ pct = (player && duration) ? (player.getCurrentTime() / Math.max(duration,1)) : 0; }catch(_){}
+    return (watched >= 60) && (pct >= 0.5);
+  }
+
+  function updateGate(){
+    const ok = eligibleNow();
+    $("#pnrClaimBtn").disabled = !ok;
+    let pct = 0;
+    try{ pct = (player && duration) ? (player.getCurrentTime()/Math.max(duration||1,1)) : 0; }catch(_){}
+    $("#pnrClaimStatus").innerHTML = ok
+      ? "Eligible to claim ✅"
+      : `Watch at least <b>60s and 50%</b> — watched ${Math.floor(watched)}s (${Math.floor(pct*100)}%)`;
+    $("#pnrGateDebug").textContent = `Watched: ${Math.floor(watched)}s • Progress: ${Math.floor(pct*100)}%`;
+  }
+
+  on("#pnrCheckBtn", "click", async () => {
+  try {
+    if (!state.account) throw new Error("Connect MetaMask first.");
+    const wallet = state.account;
+    const key = `dp_pnr_tx_${utcDayLabel()}_${wallet.toLowerCase()}`;
+    const txHash = localStorage.getItem(key);
+    if (!txHash) throw new Error("No saved PNR tx for today yet. Click Claim first.");
+
+    $("#pnrClaimStatus").textContent = "Checking tx receipt…";
+    const rcpt = await state.provider.getTransactionReceipt(txHash);
+    if (!rcpt) throw new Error("Receipt not ready yet. Try again.");
+
+    const dayId = utcDayIdNow();
+    const expectTopic1 = ethers.utils.hexZeroPad(wallet, 32).toLowerCase();
+    const expectTopic2 = ethers.utils.hexZeroPad(ethers.utils.hexlify(dayId), 32).toLowerCase();
+
+    let found = false;
+    for (const lg of rcpt.logs || []) {
+      if ((lg.address || "").toLowerCase() !== PNR_CLAIMER_ADDR.toLowerCase()) continue;
+      if (!lg.topics || lg.topics.length < 3) continue;
+      if ((lg.topics[0] || "").toLowerCase() !== TOPIC_PNR_RECEIPT.toLowerCase()) continue;
+      if ((lg.topics[1] || "").toLowerCase() !== expectTopic1) continue;
+      if ((lg.topics[2] || "").toLowerCase() !== expectTopic2) continue;
+      found = true; break;
     }
 
-    async function liqAutoVerifyToday(){
-      const { start, end } = todayUtcRange();
-      const txs = await polygonscanTxList(userAddr, start, end);
-      if (!txs.length) { logLine("Polygonscan: no tx found today."); return; }
-
-      for (const tx of txs){
-        try{
-          const res = await checkReceiptForEvent(tx.hash, CONFIG.HUB_RECEIPT_EVENT, userAddr);
-          if (res.ok){
-            logLine("Auto-verified liquidity ✅ tx:", tx.hash, "block:", tx.blockNumber);
-            await liqCheckTx(tx.hash);
-            return;
-          }
-        }catch(_){}
-      }
-      logLine("Auto-verify liquidity: no matching receipt event found in today's txs.");
+    if (found) {
+      state.pnrDone = true;
+      $("#pnrClaimStatus").innerHTML = `PNR verified on-chain ✅ (<a href="${polygonscanTxUrl(txHash)}" target="_blank" rel="noreferrer">view tx</a>)`;
+    } else {
+      state.pnrDone = false;
+      $("#pnrClaimStatus").innerHTML = `Not found in receipt logs. <a href="${polygonscanTxUrl(txHash)}" target="_blank" rel="noreferrer">Open tx</a> → Logs → confirm PnrReceiptOk.`;
     }
 
-    /**********************
-     * Wire buttons
-     **********************/
-    document.getElementById("btnConnect").onclick = async () => {
-      try{
-        if (!window.ethereum) { logLine("No wallet detected. Install MetaMask."); return; }
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        await provider.send("eth_requestAccounts", []);
-        signer = provider.getSigner();
-        userAddr = await signer.getAddress();
+    updateAllStatus();
+    maybeConfetti();
+  } catch (e) {
+    $("#pnrClaimStatus").textContent = "PNR check failed: " + (e?.message || e);
+  }
+});
+on("#pnrClaimBtn", "click", async () => {
+  try {
+    if (!state.account) throw new Error("Connect MetaMask first.");
+    if (!state.pnrEligible) throw new Error("Not eligible yet: watch ≥60s and ≥50% progress.");
 
-        setText("addrLabel", userAddr.slice(0,6) + "…" + userAddr.slice(-4));
-        setDot("dotWallet", true);
+    const signer = state.provider.getSigner();
+    const wallet = await signer.getAddress();
+    const dayId = utcDayIdNow();
 
-        await ensurePolygon();
+    // expiry seconds from UI (defaults to 900)
+    const expiresInSec = clamp(parseInt(($("#pnrExpirySec")?.value || "900"), 10) || 900, 60, 3600);
 
-        // RPC provider for receipt checks
-        rpcProvider = new ethers.providers.JsonRpcProvider(CONFIG.RPC_URL);
+    $("#pnrClaimStatus").textContent = "Requesting signer payload…";
 
-        logLine("Connected as", userAddr);
-        updateAllStatus();
-      }catch(e){
-        logLine("Connect error:", e.message || e);
-        setDot("dotWallet", false);
+    const resp = await fetch(PNR_SIGN_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ user: wallet, dayId, expiresInSec })
+    });
+
+    const payload = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(payload?.error || ("SIGN_HTTP_" + resp.status));
+
+    // Safety checks
+    if (Number(payload.dayId) !== Number(dayId)) throw new Error(`DAYID_MISMATCH (client ${dayId} vs signer ${payload.dayId})`);
+    const nowSec = Math.floor(Date.now()/1000);
+    if (Number(payload.expiresAt) <= nowSec) throw new Error(`SIGNATURE_EXPIRED (expiresAt ${payload.expiresAt}, now ${nowSec})`);
+
+    // Call contract: claim(dayId, videoId, expiresAt, sig)
+    const claimer = new ethers.Contract(PNR_CLAIMER_ADDR, PNR_CLAIMER_ABI, signer);
+
+    $("#pnrClaimStatus").textContent = "Submitting on-chain claim…";
+    const tx = await claimer.claim(
+      Number(payload.dayId),
+      payload.videoIdBytes32,
+      Number(payload.expiresAt),
+      payload.sig
+    );
+    $("#pnrClaimStatus").textContent = `Tx sent: ${tx.hash}`;
+    const rcpt = await tx.wait();
+
+    // Verify receipt has PnrReceiptOk(user, dayId, ...)
+    const TOPIC_PNR_RECEIPT = ethers.utils.id("PnrReceiptOk(address,uint32,bytes32)");
+    const expectTopic1 = ethers.utils.hexZeroPad(wallet, 32).toLowerCase();
+    const expectTopic2 = ethers.utils.hexZeroPad(ethers.BigNumber.from(dayId).toHexString(), 32).toLowerCase();
+
+    let found = false;
+    for (const lg of (rcpt.logs || [])) {
+      if ((lg.topics?.[0] || "").toLowerCase() !== TOPIC_PNR_RECEIPT.toLowerCase()) continue;
+      if ((lg.topics?.[1] || "").toLowerCase() !== expectTopic1) continue;
+      if ((lg.topics?.[2] || "").toLowerCase() !== expectTopic2) continue;
+      found = true; break;
+    }
+
+    const key = `dp_pnr_tx_${utcDayLabel()}_${wallet.toLowerCase()}`;
+    localStorage.setItem(key, tx.hash);
+
+    if (found) {
+      state.pnrDone = true;
+      $("#pnrClaimStatus").innerHTML = `PNR recorded on-chain ✅ ( <a href="${polygonscanTxUrl(tx.hash)}" target="_blank" rel="noreferrer">view tx</a> )`;
+    } else {
+      state.pnrDone = false;
+      $("#pnrClaimStatus").innerHTML = `Mined, but receipt event not detected. <a href="${polygonscanTxUrl(tx.hash)}" target="_blank" rel="noreferrer">view tx</a>`;
+    }
+
+    refreshCompletion();
+  } catch (e) {
+    $("#pnrClaimStatus").textContent = "PNR claim failed: " + (e?.message || e);
+  }
+});
+on("#openSwapBtn", "click", ()=>window.open(SWAP_URL, "_blank", "noopener"));
+  on("#saveRhythmBtn", "click", ()=>{
+    if(!isAddr(state.wallet)) return alert("Connect wallet first.");
+    const t = ($("#myTokenInput").value || "").trim();
+    if(t && !isAddr(t)) return alert("Token must be a 0x address.");
+    saveMyToken(state.wallet, t);
+    $("#buyStatus").textContent = t ? ("Saved token: " + short(t)) : "Saved token cleared.";
+  });
+
+  // ===== Step 2 (Week 1) — On-chain Buy via BuyHelper =====
+const BUY_HELPER = "0x720A02c646B6cCde35a842867BE966EbFB3863a8"; // Week1 BuyHelper (deployed)
+const DPLIQXJL_ADDR = "0xA128Ad9940C4D4AD54890cBf20370B2F49204Ee5";
+const ROUTER_ADDR = "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"; // QuickSwap v2 router
+
+const ERC20_ABI = [
+  "function decimals() view returns (uint8)",
+  "function allowance(address owner,address spender) view returns (uint256)",
+  "function approve(address spender,uint256 amount) returns (bool)"
+];
+
+const ROUTER_ABI = [
+  "function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts)"
+];
+
+const BUYHELPER_ABI = [
+  "function buyWeek1(uint256 usdcIn,uint256 amountOutMin,uint256 deadline) external returns (uint256 dpliqOut)"
+];
+
+// event Week1BuyReceiptOk(address indexed user, uint32 indexed dayId, uint256 usdcIn, uint256 dpliqOut);
+const TOPIC_BUY_RECEIPT = ethers.utils.id("Week1BuyReceiptOk(address,uint32,uint256,uint256)");
+
+function buyHelperConfigured(){
+  return isAddr(BUY_HELPER) && BUY_HELPER !== "0x0000000000000000000000000000000000000000";
+}
+
+function qsSwapUrlUSDCtoDPLIQ(){
+  // Direct QuickSwap swap URL (avoids the “launch app” interstitial).
+  // If QuickSwap changes this format, worst case it still lands on swap with manual selection.
+  return `https://quickswap.exchange/#/swap?inputCurrency=${USDC_ADDR}&outputCurrency=${DPLIQXJL_ADDR}`;
+}
+
+async function buyQuote(){
+  if(!state.provider) return;
+  try{
+    const usdc = parseFloat($("#buy_usdc")?.value || "0");
+    if(!(usdc>0)) { $("#buyQuoteOut").textContent = "Quote: —"; return; }
+    const amtIn = ethers.utils.parseUnits(String(usdc), 6);
+    const router = new ethers.Contract(ROUTER_ADDR, ROUTER_ABI, state.provider);
+    const path = [USDC_ADDR, DPLIQXJL_ADDR];
+    const amts = await router.getAmountsOut(amtIn, path);
+    const out = amts[amts.length-1];
+    $("#buyQuoteOut").textContent = `Quote: ~${ethers.utils.formatUnits(out, 18)} DPLIQXJL (router view)`;
+  }catch(e){
+    $("#buyQuoteOut").textContent = "Quote: —";
+  }
+}
+
+async function approveUSDCForBuyHelper(){
+  if(!buyHelperConfigured()) return alert("BuyHelper address not configured in this HTML yet.");
+  if(!state.signer) return alert("Connect wallet first.");
+  const usdcC = new ethers.Contract(USDC_ADDR, ERC20_ABI, state.signer);
+  // approve a “nice round” allowance (10 USDC) by default; user can re-approve later
+  const amt = ethers.utils.parseUnits("10", 6);
+  $("#buyStatus").textContent = "Status: Approving USDC…";
+  const tx = await usdcC.approve(BUY_HELPER, amt);
+  $("#buyStatus").textContent = `Status: Approve sent… ${tx.hash}`;
+  await tx.wait();
+  $("#buyStatus").textContent = "Status: USDC approved ✅";
+}
+
+async function buyWeek1Onchain(){
+  if(!buyHelperConfigured()) return alert("BuyHelper address not configured in this HTML yet.");
+  if(!state.signer) return alert("Connect wallet first.");
+  const usdc = parseFloat($("#buy_usdc")?.value || "0");
+  if(!(usdc>0)) return alert("Enter a USDC amount.");
+  const usdcIn = ethers.utils.parseUnits(String(usdc), 6);
+
+  // We keep this “idiot-proof”: set amountOutMin to 0 by default.
+  // If you want stricter, you can compute a min from quote (e.g., 98%).
+  const amountOutMin = 0;
+
+  const deadline = Math.floor(Date.now()/1000) + 10*60;
+  const bh = new ethers.Contract(BUY_HELPER, BUYHELPER_ABI, state.signer);
+
+  $("#buyStatus").textContent = "Status: Buying on-chain…";
+  const tx = await bh.buyWeek1(usdcIn, amountOutMin, deadline);
+  $("#buyStatus").textContent = `Status: Buy sent… ${tx.hash}`;
+  const rcpt = await tx.wait();
+  $("#buyStatus").textContent = "Status: Buy confirmed ✅";
+
+  // Verify receipt immediately
+  const ok = receiptHasBuyOk(rcpt);
+  if(ok){
+    state.buyDone = true;
+    $("#buyVerifyStatus").textContent = "Status: Verified ✅ Week1BuyReceiptOk found in receipt logs.";
+    recomputeComplete();
+  }else{
+    $("#buyVerifyStatus").textContent = "Status: Not found in receipt (unexpected). Open tx on Polygonscan.";
+  }
+
+  // Update latest tx display
+  $("#buyLatestTx").textContent = tx.hash;
+  $("#buyLatestBlock").textContent = String(rcpt.blockNumber || "—");
+}
+
+function receiptHasBuyOk(rcpt){
+  if(!rcpt || !rcpt.logs) return false;
+  const meTopic = ethers.utils.hexZeroPad(state.wallet, 32).toLowerCase();
+  for(const l of rcpt.logs){
+    if(!l.topics || l.topics.length < 2) continue;
+    if(l.topics[0]?.toLowerCase() !== TOPIC_BUY_RECEIPT.toLowerCase()) continue;
+    if(l.topics[1]?.toLowerCase() !== meTopic) continue;
+    // Optional: could also check dayId (topics[2]) equals todayId
+    return true;
+  }
+  return false;
+}
+
+async function checkBuyTxHash(txHash){
+  if(!state.provider) return;
+  try{
+    $("#buyVerifyStatus").textContent = "Status: Checking tx receipt…";
+    const rcpt = await state.provider.getTransactionReceipt(txHash);
+    if(!rcpt){ $("#buyVerifyStatus").textContent = "Status: Not found (wait confirmations)"; return; }
+    const ok = receiptHasBuyOk(rcpt);
+    if(ok){
+      state.buyDone = true;
+      $("#buyVerifyStatus").textContent = "Status: Verified ✅ Week1BuyReceiptOk found in tx receipt logs.";
+      $("#buyLatestTx").textContent = txHash;
+      $("#buyLatestBlock").textContent = String(rcpt.blockNumber || "—");
+      recomputeComplete();
+    }else{
+      $("#buyVerifyStatus").textContent = "Status: Not found in this tx.";
+    }
+  }catch(e){
+    $("#buyVerifyStatus").textContent = "Status: Error reading tx receipt.";
+  }
+}
+
+async function polygonscanV2Test(){
+  await polygonscanGet("stats", "chains");
+}
+
+// Find latest BuyHelper tx *today* (UTC) via Polygonscan V2, then verify by receipt.
+async function autoVerifyBuyToday(){
+  if(!buyHelperConfigured()) return alert("BuyHelper address not configured in this HTML yet.");
+  if(!isAddr(state.wallet)) return alert("Connect wallet first.");
+  $("#buyVerifyStatus").textContent = "Status: Searching today’s buy tx…";
+
+  // Get your tx list and pick latest where `to == BUY_HELPER` and input starts with buyWeek1 selector (0x??????)
+  const txs = await polygonscanTxList(state.wallet);
+  const selector = "0x"; // we will compute from ABI in JS once ethers is loaded
+  // buyWeek1(uint256,uint256,uint256)
+  const sig = "buyWeek1(uint256,uint256,uint256)";
+  const sel = ethers.utils.id(sig).slice(0,10).toLowerCase();
+
+  const { startTs, endTs } = utcDayBounds(Date.now());
+  const matches = txs
+    .filter(t => (t.to||"").toLowerCase() === BUY_HELPER.toLowerCase())
+    .filter(t => (t.input||"").toLowerCase().startsWith(sel))
+    .filter(t => {
+      const ts = Number(t.timeStamp || 0) * 1000;
+      return ts >= startTs && ts < endTs;
+    })
+    .sort((a,b)=> Number(b.timeStamp)-Number(a.timeStamp));
+
+  if(matches.length === 0){
+    $("#buyVerifyStatus").textContent = "Status: No buy tx found for today (UTC).";
+    $("#buyLatestTx").textContent = "—";
+    $("#buyLatestBlock").textContent = "—";
+    return;
+  }
+
+  const tx = matches[0];
+  $("#buyLatestTx").textContent = tx.hash;
+  $("#buyLatestBlock").textContent = tx.blockNumber;
+
+  // Verify via receipt
+  await checkBuyTxHash(tx.hash);
+}
+
+function wireBuyWeek1UI(){
+  const qs = $("#qsLink"); if(qs) qs.href = qsSwapUrlUSDCtoDPLIQ();
+  const qbtn = $("#btnBuyQuote"); if(qbtn) qbtn.addEventListener("click", buyQuote);
+  const ap = $("#btnApproveUSDC"); if(ap) ap.addEventListener("click", approveUSDCForBuyHelper);
+  const b = $("#btnBuyOnchain"); if(b) b.addEventListener("click", buyWeek1Onchain);
+  const av = $("#btnBuyAutoVerify"); if(av) av.addEventListener("click", autoVerifyBuyToday);
+  const tst = $("#btnBuyTestScan"); if(tst) tst.addEventListener("click", async ()=>{
+    try{ await polygonscanTxList(state.wallet); $("#buyVerifyStatus").textContent="Status: Polygonscan OK ✅"; }
+    catch(e){ $("#buyVerifyStatus").textContent="Status: Polygonscan error."; }
+  });
+  const chk = $("#btnBuyCheckTx"); if(chk) chk.addEventListener("click", async ()=>{
+    const h = ($("#buyTxInput")?.value||"").trim();
+    if(!/^0x[a-fA-F0-9]{64}$/.test(h)) return alert("Paste a valid 0x tx hash.");
+    await checkBuyTxHash(h);
+  });
+}
+
+
+  // -----------------------------
+  // Step 3: Liquidity auto-verify via Polygonscan v2 + receipt parsing
+  // -----------------------------
+  const HUB_RECEIPT_TOPIC0 = "0xcc935063a5bc3e47dfdeceaa9db219943abe5bc03700cc35e21f762c510c4440"; // HubReceiptOk(address) keccak
+  const ADDMATCHED_SELECTOR = "0x8f821438";
+
+  function diag(obj){
+    try{ $("#diag").textContent = JSON.stringify(obj, null, 2); }catch(_){}
+  }
+
+  async function psGet(params){
+    const q = new URLSearchParams(params);
+    const url = `${POLYSCAN_V2}?${q.toString()}`;
+    const r = await fetch(url, { headers:{ accept:"application/json" }});
+    const j = await r.json().catch(()=>({}));
+    return { url, ok:r.ok, json:j };
+  }
+
+  async function testPolygonscan(){
+    const out = await psGet({ chainid:"137", module:"proxy", action:"eth_blockNumber", apikey: POLYSCAN_KEY });
+    diag(out);
+    if(out.json && out.json.status==="1"){
+      $("#liqStatus").textContent = "Polygonscan OK ✅ (block=" + out.json.result + ")";
+    }else{
+      $("#liqStatus").textContent = "Polygonscan error: " + (out.json?.message || "unknown");
+    }
+  }
+  on("#psTestBtn", "click", ()=>testPolygonscan().catch(e=>{
+    $("#liqStatus").textContent = "Polygonscan test failed: " + (e?.message || e);
+  }));
+
+  function topic1MatchesWallet(topic1, wallet){
+    // topic1 is 32-byte hex with left padded address
+    if(!topic1 || !wallet) return false;
+    const w = wallet.toLowerCase().replace(/^0x/,"");
+    return topic1.toLowerCase().endsWith(w);
+  }
+
+  async function verifyTxReceipt(txHash){
+    // Use Polygonscan proxy eth_getTransactionReceipt
+    const rec = await psGet({ chainid:"137", module:"proxy", action:"eth_getTransactionReceipt", txhash: txHash, apikey: POLYSCAN_KEY });
+    diag({ step:"eth_getTransactionReceipt", ...rec });
+    const j = rec.json;
+    const r = j?.result;
+    if(!r) throw new Error("No receipt result");
+    const logs = r.logs || [];
+
+    // Find event in logs: topic0==HUB_RECEIPT_TOPIC0 and topic1 endswith wallet
+    let found = null;
+    for(const lg of logs){
+      const topics = lg.topics || [];
+      if((topics[0]||"").toLowerCase() === HUB_RECEIPT_TOPIC0.toLowerCase()){
+        if(topic1MatchesWallet(topics[1], state.wallet)){
+          found = { emitter: lg.address, topics, data: lg.data };
+          break;
+        }
       }
-    };
+    }
+    return { receipt:r, found };
+  }
 
-    document.getElementById("btnResetDay").onclick = () => {
-      const dayId = utcDayIdNow();
-      localStorage.removeItem(keyDay(userAddr || "anon", dayId));
-      logLine("Reset local receipts for dayId", dayId);
-      updateAllStatus();
-    };
+  function setTxLinks(tx){
+    const link = $("#openTxLink");
+    if(!tx || tx==="—"){ link.style.display="none"; link.href="#"; return; }
+    link.style.display="inline-block";
+    link.href = `https://polygonscan.com/tx/${tx}`;
+  }
 
-    document.getElementById("btnPnrClaim").onclick = async () => {
-      try { await pnrClaim(); } catch(e){ logLine("PNR claim failed:", e.message || e); }
-    };
-    document.getElementById("btnPnrCheck").onclick = async () => {
-      try { await pnrCheckLast(); } catch(e){ logLine("PNR check failed:", e.message || e); }
-    };
+  async function findLatestDepositToday(){
+    // We look for transactions FROM wallet TO zapper, and method selector matches addMatchedLiquidity.
+    // Use account txlist (v2): module=account&action=txlist
+    const list = await psGet({
+      chainid:"137",
+      module:"account",
+      action:"txlist",
+      address: state.wallet,
+      startblock:"0",
+      endblock:"99999999",
+      sort:"desc",
+      apikey: POLYSCAN_KEY
+    });
+    diag({ step:"txlist", ...list });
+    const j = list.json;
+    if(j?.status !== "1" || !Array.isArray(j.result)) throw new Error("POLYGONSCAN_TXLIST_NOTOK: status=" + j?.status + " message=" + j?.message + " result=" + (j?.result||""));
 
-    document.getElementById("btnBuyOpen").onclick = () => window.open(CONFIG.BUYHELPER_URL, "_blank", "noopener");
-    document.getElementById("btnLiqOpen").onclick = () => window.open(CONFIG.LIQUIDITY_URL, "_blank", "noopener");
+    // Filter: to == zapper and input starts with selector, and timestamp matches today's UTC day
+    const today = TODAY_UTC;
+    const matches = j.result.filter(tx=>{
+      const to = (tx.to || "").toLowerCase();
+      const input = (tx.input || "");
+      if(to !== ZAPPER_ADDR.toLowerCase()) return false;
+      if(!input.startsWith(ADDMATCHED_SELECTOR)) return false;
+      const ts = Number(tx.timeStamp || 0) * 1000;
+      const day = utcDayLabel(new Date(ts));
+      return day === today;
+    });
 
-    document.getElementById("btnBuyCheck").onclick = async () => {
-      try{
-        const tx = document.getElementById("buyTxInput").value.trim();
-        await buyCheckTx(tx);
-      }catch(e){ logLine("Buy check failed:", e.message || e); }
-    };
+    if(!matches.length) return null;
+    return matches[0]; // latest
+  }
 
-    document.getElementById("btnLiqCheck").onclick = async () => {
-      try{
-        const tx = document.getElementById("liqTxInput").value.trim();
-        await liqCheckTx(tx);
-      }catch(e){ logLine("Liquidity check failed:", e.message || e); }
-    };
+  async function autoVerifyLiquidity(){
+    if(!isAddr(state.wallet)) return alert("Connect wallet first.");
+    $("#liqStatus").textContent = "Searching today deposits…";
+    try{
+      const tx = await findLatestDepositToday();
+      if(!tx){
+        state.liqDone = false;
+        $("#liqStatus").textContent = "No deposit found for today (UTC).";
+        $("#liqTx").textContent = "—";
+        $("#liqBlock").textContent = "—";
+        $("#liqProofLine").textContent = "";
+        recomputeComplete();
+        return;
+      }
+      state.liqTx = tx.hash;
+      $("#liqTx").textContent = tx.hash;
+      $("#liqBlock").textContent = tx.blockNumber || "—";
+      setTxLinks(tx.hash);
 
-    document.getElementById("btnBuyAuto").onclick = async () => {
-      try{ await buyAutoVerifyToday(); } catch(e){ logLine("Auto-verify buy failed:", e.message || e); }
-    };
+      $("#liqStatus").textContent = "Fetching receipt…";
+      const vr = await verifyTxReceipt(tx.hash);
+      if(vr.found){
+        state.liqDone = true;
+        $("#liqStatus").textContent = "Verified ✅ HubReceiptOk found in tx receipt logs.";
+        $("#liqProofLine").textContent = `Found HubReceiptOk emitter=${vr.found.emitter} • topic1=${vr.found.topics[1]}`;
+      }else{
+        state.liqDone = false;
+        $("#liqStatus").textContent = "Not found: receipt did not contain HubReceiptOk(topic1==your wallet).";
+        $("#liqProofLine").textContent = "Open the tx on Polygonscan → Logs → confirm HubReceiptOk appears.";
+      }
+      recomputeComplete();
+    }catch(e){
+      $("#liqStatus").textContent = "Auto-verify failed: " + (e?.message || e);
+      state.liqDone = false;
+      recomputeComplete();
+    }
+  }
 
-    document.getElementById("btnLiqAuto").onclick = async () => {
-      try{ await liqAutoVerifyToday(); } catch(e){ logLine("Auto-verify liquidity failed:", e.message || e); }
-    };
+  on("#liqAutoBtn", "click", ()=>autoVerifyLiquidity());
+  on("#openLiqBtn", "click", ()=>window.open(LIQ_URL, "_blank", "noopener"));
 
-    document.getElementById("btnSaveSupport").onclick = () => {
-      const v = document.getElementById("rhythmSelect").value;
-      setSupport(userAddr || "anon", v);
-      logLine("Support saved:", v);
-      updateAllStatus();
-    };
+  on("#liqCheckBtn", "click", async ()=>{
+    if(!isAddr(state.wallet)) return alert("Connect wallet first.");
+    const tx = ($("#liqTxInput").value || "").trim();
+    if(!/^0x([A-Fa-f0-9]{64})$/.test(tx)) return alert("Enter a valid tx hash (0x...)");
+    $("#liqStatus").textContent = "Checking tx receipt…";
+    try{
+      const vr = await verifyTxReceipt(tx);
+      $("#liqTx").textContent = tx;
+      $("#liqBlock").textContent = vr.receipt?.blockNumber || "—";
+      setTxLinks(tx);
+      if(vr.found){
+        state.liqDone = true;
+        $("#liqStatus").textContent = "Verified ✅ HubReceiptOk found in tx receipt logs.";
+        $("#liqProofLine").textContent = `Found HubReceiptOk emitter=${vr.found.emitter} • topic1=${vr.found.topics[1]}`;
+      }else{
+        state.liqDone = false;
+        $("#liqStatus").textContent = "Not found in this tx.";
+        $("#liqProofLine").textContent = "Open Polygonscan → Logs → look for HubReceiptOk.";
+      }
+      recomputeComplete();
+    }catch(e){
+      $("#liqStatus").textContent = "Receipt read failed: " + (e?.message || e);
+      state.liqDone = false;
+      recomputeComplete();
+    }
+  });
 
-    /**********************
-     * Init
-     **********************/
-    (function init(){
-      renderConfig();
-      // defaults
-      setText("netLabel","—");
-      setText("addrLabel","—");
-      setText("keptLabel","—");
-      setText("pnrLabel","—");
-      setText("buyLabel","—");
-      setText("liqLabel","—");
-      setText("supportLabel","—");
-      // show "today" even before wallet
-      setInterval(updateAllStatus, 2000);
-      updateAllStatus();
-    })();
-  </script>
+  // -----------------------------
+  // Completion logic (FIXED: no auto-complete unless receipts actually exist)
+  // -----------------------------
+  let firedConfettiForDay = false;
+
+  function recomputeComplete(){
+    const all = !!(state.pnrDone && state.buyDone && state.liqDone);
+    $("#todayCompletePill").textContent = all ? "Today Complete ✅" : "Today Complete: —";
+    $("#todayCompletePill").className = all ? "pill pill-green" : "pill";
+    $("#completeLine").textContent = all ? "Today Complete ✅" : "";
+
+    if(all && !firedConfettiForDay){
+      firedConfettiForDay = true;
+      try{ window.confetti && window.confetti({ spread:70, particleCount:140, origin:{ y:0.6 } }); }catch(_){}
+    }
+  }
+
+  on("#testConfettiBtn", "click", ()=>{
+    try{ window.confetti && window.confetti({ spread:70, particleCount:120, origin:{ y:0.6 } }); }catch(_){}
+  });
+
+  on("#resetDevBtn", "click", ()=>{
+    if(!isAddr(state.wallet)) return alert("Connect wallet first.");
+    clearLocalReceipts(state.wallet);
+    state.pnrDone = false;
+    state.buyDone = false;
+    $("#pnrReceipt").textContent = "Receipt: —";
+    $("#buyStatus").textContent = "Status: —";
+    firedConfettiForDay = false;
+    recomputeComplete();
+    alert("Local receipts reset for today (PNR + Buy). Liquidity proof remains on-chain.");
+  });
+
+  // -----------------------------
+  // Connect
+  // -----------------------------
+  async function connect(){
+    const eth = await ensureEthereum();
+    await ensurePolygon(eth);
+
+    const accts = await eth.request({ method:"eth_requestAccounts" });
+    if(!accts || !accts[0]) throw new Error("No account");
+    state.wallet = accts[0];
+
+    try{
+      await initProvider();
+    }catch(e){
+      console.error(e);
+      setConnStatus("Ethers failed to load (blocked by browser privacy settings). Try Chrome/MetaMask browser or disable Tracking Prevention for this site.");
+      return;
+    }
+    setConnStatus(`Connected: ${short(state.wallet)} • chain 137`);
+
+    // Load stored token + receipts (IMPORTANT: only reads, does NOT write)
+    const _mt = $("#myTokenInput"); if (_mt) _mt.value = loadMyToken(state.wallet);
+    state.pnrDone = loadLocalReceipt("pnr", state.wallet);
+    state.buyDone = loadLocalReceipt("buy", state.wallet);
+    $("#pnrReceipt").textContent = state.pnrDone ? "Receipt: saved ✅" : "Receipt: —";
+    $("#buyStatus").textContent = state.buyDone ? "Receipt: saved ✅" : "Status: —";
+
+    await loadCobAndSponsorState();
+    recomputeComplete();
+  }
+
+  on("#connectBtn", "click", ()=>connect().catch(e=>{
+    console.warn(e);
+    alert(e?.message || "Connect failed");
+  }));
+
+  (async ()=>{
+    try{
+      if(window.ethereum){
+        const accts = await window.ethereum.request({ method:"eth_accounts" });
+        if(accts && accts[0]){
+          state.wallet = accts[0];
+          await initProvider();
+          setConnStatus(`Connected: ${short(state.wallet)} • chain 137`);
+          const _mt = $("#myTokenInput"); if (_mt) _mt.value = loadMyToken(state.wallet);
+
+          state.pnrDone = loadLocalReceipt("pnr", state.wallet);
+          state.buyDone = loadLocalReceipt("buy", state.wallet);
+          $("#pnrReceipt").textContent = state.pnrDone ? "Receipt: saved ✅" : "Receipt: —";
+          $("#buyStatus").textContent = state.buyDone ? "Receipt: saved ✅" : "Status: —";
+
+          await loadCobAndSponsorState();
+          recomputeComplete();
+        }
+      }
+    }catch(_){}
+  })();
+
+  if(window.ethereum){
+    window.ethereum.on?.("accountsChanged", async (accs)=>{
+      const a = accs && accs[0];
+      if(a){
+        state.wallet = a;
+        await initProvider();
+        setConnStatus(`Connected: ${short(a)} • chain 137`);
+        const _mt = $("#myTokenInput"); if (_mt) _mt.value = loadMyToken(state.wallet);
+
+        state.pnrDone = loadLocalReceipt("pnr", state.wallet);
+        state.buyDone = loadLocalReceipt("buy", state.wallet);
+        $("#pnrReceipt").textContent = state.pnrDone ? "Receipt: saved ✅" : "Receipt: —";
+        $("#buyStatus").textContent = state.buyDone ? "Receipt: saved ✅" : "Status: —";
+
+        await loadCobAndSponsorState();
+        firedConfettiForDay = false;
+        recomputeComplete();
+      }else{
+        state.wallet = "";
+        setConnStatus("Not connected");
+      }
+    });
+    window.ethereum.on?.("chainChanged", ()=>location.reload());
+  }
+
+})();
+</script>
 </body>
 </html>
