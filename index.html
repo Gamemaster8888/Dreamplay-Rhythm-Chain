@@ -428,7 +428,75 @@ const DPLIQXJL     = "0xA128Ad9940C4D4AD54890cBf20370B2F49204Ee5";
       link.style.display = "none";
     }
   }
-  document.addEventListener("DOMContentLoaded", () => {
+  
+  // --- Missing helpers (restored) ---
+
+  function utcDayIdNow(){
+    return Math.floor(Math.floor(Date.now()/1000)/86400);
+  }
+
+  function dayStartEndUtcSec(){
+    const now = Math.floor(Date.now()/1000);
+    const start = Math.floor(now/86400)*86400;
+    return { start, end: start + 86400 - 1 };
+  }
+
+  async function polygonscanTxList(address){
+    // Uses Etherscan API V2 endpoint (chainid=137)
+    // Returns full tx list (sorted desc) for the address.
+    if(!POLYSCAN_KEY) throw new Error("POLYSCAN_KEY_MISSING");
+    const u = new URL(POLYSCAN_V2);
+    u.searchParams.set("chainid", "137");
+    u.searchParams.set("module", "account");
+    u.searchParams.set("action", "txlist");
+    u.searchParams.set("address", address);
+    u.searchParams.set("startblock", "0");
+    u.searchParams.set("endblock", "99999999");
+    u.searchParams.set("sort", "desc");
+    u.searchParams.set("apikey", POLYSCAN_KEY);
+
+    const r = await fetch(u.toString());
+    const j = await r.json();
+    if (j && (j.status === "0") && j.result && typeof j.result === "string") {
+      // Some error messages are in result
+      throw new Error(j.result);
+    }
+    return (j && Array.isArray(j.result)) ? j.result : [];
+  }
+
+  function updateAllStatus(){
+    // called on load to refresh pills using stored receipts
+    try{
+      if(state.wallet){
+        // Buy uses local receipt on successful verification
+        state.buyDone = !!loadLocalReceipt("buy", state.wallet);
+
+        // PNR: treat as done if we have a saved tx for today OR (optionally) a local receipt flag
+        const pnrKey = `dp_pnr_tx_${utcDayLabel()}_${state.wallet.toLowerCase()}`;
+        const hasPnrTx = !!localStorage.getItem(pnrKey);
+        const hasPnrLocal = !!loadLocalReceipt("pnr", state.wallet);
+        state.pnrDone = hasPnrTx || hasPnrLocal;
+      } else {
+        state.buyDone = false;
+        state.pnrDone = false;
+      }
+
+      // Update visible statuses (keep existing rich text but ensure “done” persists)
+      if(state.buyDone){
+        $("#buyStatus").textContent = "Status: Buy confirmed ✅";
+      }
+
+      // PNR status line (only if we have something persisted)
+      if(state.pnrDone){
+        $("#pnrClaimStatus").textContent = "PNR on-chain ✅ (saved for today)";
+      }
+
+      recomputeComplete();
+    }catch(_){}
+  }
+
+  // --- end restored helpers ---
+document.addEventListener("DOMContentLoaded", () => {
   try {
     showOpenInMMIfNeeded();
     initProvider();
@@ -657,8 +725,8 @@ const TOPIC_PNR_RECEIPT = ethers.utils.id("PnrReceiptOk(address,uint32)");
 
   on("#pnrCheckBtn", "click", async () => {
   try {
-    if (!state.account) throw new Error("Connect MetaMask first.");
-    const wallet = state.account;
+    if (!state.wallet) throw new Error("Connect MetaMask first.");
+    const wallet = state.wallet;
     const key = `dp_pnr_tx_${utcDayLabel()}_${wallet.toLowerCase()}`;
     const txHash = localStorage.getItem(key);
     if (!txHash) throw new Error("No saved PNR tx for today yet. Click Claim first.");
@@ -697,9 +765,8 @@ const TOPIC_PNR_RECEIPT = ethers.utils.id("PnrReceiptOk(address,uint32)");
 });
 on("#pnrClaimBtn", "click", async () => {
   try {
-    if (!state.account) throw new Error("Connect MetaMask first.");
-    if (!state.pnrEligible) throw new Error("Not eligible yet: watch ≥60s and ≥50% progress.");
-
+    if (!state.wallet) throw new Error("Connect MetaMask first.");
+    if (!eligibleNow()) throw new Error("Not eligible yet: watch ≥60s and ≥50% progress.");
     const signer = state.provider.getSigner();
     const wallet = await signer.getAddress();
     const dayId = utcDayIdNow();
