@@ -976,42 +976,62 @@ async function polygonscanV2Test(){
 }
 
 // Find latest BuyHelper tx *today* (UTC) via Polygonscan V2, then verify by receipt.
+
+async function verifyReceiptHasEvent(txHash, topic0Sig, walletAddr){
+  // Uses RPC provider to fetch receipt and check for topic0 + topic1==wallet
+  const receipt = await state.rpc.getTransactionReceipt(txHash);
+  if(!receipt || !receipt.logs) return false;
+  const want0 = topic0Sig.toLowerCase();
+  const want1 = "0x" + walletAddr.toLowerCase().replace(/^0x/,"").padStart(64,"0");
+  for(const lg of receipt.logs){
+    const tops = lg.topics || [];
+    if(tops.length >= 2 && String(tops[0]).toLowerCase() === want0 && String(tops[1]).toLowerCase() === want1){
+      return true;
+    }
+  }
+  return false;
+}
+
 async function autoVerifyBuyToday(){
-  if(!buyHelperConfigured()) return alert("BuyHelper address not configured in this HTML yet.");
   if(!isAddr(state.wallet)) return alert("Connect wallet first.");
   $("#buyVerifyStatus").textContent = "Status: Searching today’s buy tx…";
 
-  // Get your tx list and pick latest where `to == BUY_HELPER` and input starts with buyWeek1 selector (0x??????)
   const txs = await polygonscanTxList(state.wallet);
-  const selector = "0x"; // we will compute from ABI in JS once ethers is loaded
-  // buyWeek1(uint256,uint256,uint256)
-  const sig = "buyWeek1(uint256,uint256,uint256)";
-  const sel = ethers.utils.id(sig).slice(0,10).toLowerCase();
-
   const { startTs, endTs } = utcDayBounds(Date.now());
-  const matches = txs
-    .filter(t => (t.to||"").toLowerCase() === BUY_HELPER.toLowerCase())
-    .filter(t => (t.input||"").toLowerCase().startsWith(sel))
-    .filter(t => {
-      const ts = Number(t.timeStamp || 0) * 1000;
-      return ts >= startTs && ts < endTs;
-    })
-    .sort((a,b)=> Number(b.timeStamp)-Number(a.timeStamp));
 
-  if(matches.length === 0){
-    $("#buyVerifyStatus").textContent = "Status: No buy tx found for today (UTC).";
+  // Keep only today's txs (UTC)
+  const todayTxs = txs.filter(t => {
+    const ts = Number(t.timeStamp || 0) * 1000;
+    return ts >= startTs && ts <= endTs;
+  });
+
+  if(todayTxs.length === 0){
+    $("#buyVerifyStatus").textContent = "Status: No tx found for today (UTC).";
     $("#buyLatestTx").textContent = "—";
     $("#buyLatestBlock").textContent = "—";
     return;
   }
 
-  const tx = matches[0];
-  $("#buyLatestTx").textContent = tx.hash;
-  $("#buyLatestBlock").textContent = tx.blockNumber;
+  // Try newest-first until we find the Week1BuyReceiptOk receipt log for this wallet.
+  for (const t of todayTxs){
+    try{
+      const ok = await verifyReceiptHasEvent(t.hash, WEEK1_BUY_TOPIC0, state.wallet);
+      if(ok){
+        $("#buyLatestTx").textContent = t.hash;
+        $("#buyLatestBlock").textContent = t.blockNumber || "—";
+        $("#buyVerifyStatus").textContent = "Status: Verified ✅ Week1BuyReceiptOk found in tx receipt logs.";
+        saveLocalReceipt("buy", state.wallet, t.hash);
+        updateAllStatus();
+        return;
+      }
+    }catch(_){}
+  }
 
-  // Verify via receipt
-  await checkBuyTxHash(tx.hash);
+  $("#buyVerifyStatus").textContent = "Status: No Week1BuyReceiptOk found in today’s txs. Paste the tx hash and click Check Tx.";
+  $("#buyLatestTx").textContent = todayTxs[0].hash;
+  $("#buyLatestBlock").textContent = todayTxs[0].blockNumber || "—";
 }
+
 
 function wireBuyWeek1UI(){
   const qs = $("#qsLink"); if(qs) qs.href = qsSwapUrlUSDCtoDPLIQ();
@@ -1319,4 +1339,7 @@ function wireBuyWeek1UI(){
 })();
 </script>
 </body>
-</html>
+</html
+  function clamp(n, lo, hi){ n = Number(n); if(Number.isNaN(n)) n = lo; return Math.max(lo, Math.min(hi, n)); }
+
+>
