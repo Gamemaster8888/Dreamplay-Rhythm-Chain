@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DreamPlay – I Watched Today (Claim)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; background: #0b0f19; color: #e8eefc; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 24px; }
+    .card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 18px; margin: 14px 0; }
+    h1 { margin: 0 0 8px; font-size: 24px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    button { cursor:pointer; border: 0; border-radius: 12px; padding: 12px 14px; font-weight: 700; }
+    button.primary { background: #6ee7ff; color: #071019; }
+    button.secondary { background: rgba(255,255,255,0.12); color: #e8eefc; border: 1px solid rgba(255,255,255,0.18); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    pre { white-space: pre-wrap; word-break: break-word; background: rgba(0,0,0,0.25); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.12); }
+    .muted { color: rgba(232,238,252,0.75); }
+    .ok { color: #7CFC9A; }
+    .bad { color: #ff9aa2; }
+    input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18); color: #e8eefc; border-radius: 12px; padding: 10px 12px; }
+    .pill { display:inline-block; padding: 4px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); font-size: 12px; }
+    a { color:#6ee7ff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Day Hub – “I Watched Today (Claim)”</h1>
+      <div class="muted">Connect the wallet that will claim. This page will request a signature from Netlify, then call <code>claim(dayId, videoIdBytes32, expiresAt, sig)</code> from the same wallet.</div>
+      <div style="margin-top:10px" class="row">
+        <span class="pill">Network: <span id="netLabel">—</span></span>
+        <span class="pill">Wallet: <span id="addrLabel">—</span></span>
+        <span class="pill">UTC dayId: <span id="dayLabel">—</span></span>
+      </div>
+      <div style="margin-top:14px" class="row">
+        <button class="secondary" id="btnConnect">Connect Wallet</button>
+        <button class="primary" id="btnClaim" disabled>I Watched Today (Claim)</button>
+      </div>
+      <div style="margin-top:12px" class="muted">
+        Optional: expiry seconds (60–3600): <input id="expInput" value="900" inputmode="numeric" style="width:100px" />
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <strong>Status</strong>
+        <span id="statusPill" class="pill">Idle</span>
+      </div>
+      <pre id="log"></pre>
+    </div>
+
+    <div class="card">
+      <strong>Troubleshooting</strong>
+      <ul class="muted">
+        <li>If you see <code>DAYID_MISMATCH</code> or an off-by-one day, ensure both client and server use UTC epoch math, not local date math.</li>
+        <li>Polygon mainnet is <code>chainId 137</code>. If you’re on another network, switch.</li>
+        <li>If the tx reverts, your contract may not recognize the <code>signer</code> address returned by the function.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Ethers v5 (matches your Netlify function + common wallet setups) -->
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+
+  <script>
+    // -----------------------
+    // CONFIG (Polygon mainnet)
+    // -----------------------
+    const CHAIN_ID = 137;
+    const PNR_CONTRACT = "0xcB819189dD53FA65b5b15E979b5D6715752Acef9";
+
+    // IMPORTANT: This ABI must match your deployed contract.
+    // Update it if the function signature differs.
+    const PNR_ABI = [
+      "function claim(uint32 dayId, bytes32 videoIdBytes32, uint64 expiresAt, bytes sig) external",
+    ];
+
+    // -----------------------
+    // Helpers
+    // -----------------------
+    function utcDayIdNow() {
+      return Math.floor(Math.floor(Date.now() / 1000) / 86400);
+    }
+
+    function setStatus(text, ok=null) {
+      const pill = document.getElementById("statusPill");
+      pill.textContent = text;
+      pill.className = "pill" + (ok === true ? " ok" : ok === false ? " bad" : "");
+    }
+
+    function logLine(...args) {
+      const el = document.getElementById("log");
+      const s = args.map(a => (typeof a === "string" ? a : JSON.stringify(a, null, 2))).join(" ");
+      el.textContent = (el.textContent ? el.textContent + "\n" : "") + s;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    async function ensurePolygon(provider) {
+      const net = await provider.getNetwork();
+      document.getElementById("netLabel").textContent = `${net.chainId}`;
+      if (net.chainId === CHAIN_ID) return true;
+
+      // Ask wallet to switch to Polygon mainnet
+      try {
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x89" }], // 137
+        });
+        const net2 = await provider.getNetwork();
+        document.getElementById("netLabel").textContent = `${net2.chainId}`;
+        return net2.chainId === CHAIN_ID;
+      } catch (e) {
+        logLine("Network switch failed:", e.message || e);
+        return false;
+      }
+    }
+
+    async function postSignPayload({ user, dayId, expiresInSec }) {
+      const resp = await fetch("/.netlify/functions/pnr-sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user, dayId, expiresInSec })
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data?.error || ("SIGN_HTTP_" + resp.status));
+      }
+      return data;
+    }
+
+    // -----------------------
+    // App state
+    // -----------------------
+    let provider, signer, userAddr;
+
+    function refreshDay() {
+      document.getElementById("dayLabel").textContent = String(utcDayIdNow());
+    }
+    setInterval(refreshDay, 2000);
+    refreshDay();
+
+    // -----------------------
+    // UI actions
+    // -----------------------
+    document.getElementById("btnConnect").onclick = async () => {
+      try {
+        setStatus("Connecting…");
+        if (!window.ethereum) {
+          setStatus("No wallet found", false);
+          logLine("Install MetaMask (or another EVM wallet) to use this page.");
+          return;
+        }
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+        signer = provider.getSigner();
+        userAddr = await signer.getAddress();
+
+        document.getElementById("addrLabel").textContent =
+          userAddr.slice(0, 6) + "…" + userAddr.slice(-4);
+
+        const okNet = await ensurePolygon(provider);
+        if (!okNet) {
+          setStatus("Wrong network", false);
+          logLine("Please switch to Polygon (chainId 137) and try again.");
+          return;
+        }
+
+        setStatus("Connected", true);
+        document.getElementById("btnClaim").disabled = false;
+        logLine("Connected as", userAddr);
+      } catch (e) {
+        setStatus("Connect failed", false);
+        logLine("Connect error:", e.message || e);
+      }
+    };
+
+    document.getElementById("btnClaim").onclick = async () => {
+      try {
+        if (!provider || !signer || !userAddr) throw new Error("NOT_CONNECTED");
+
+        setStatus("Preparing…");
+        const okNet = await ensurePolygon(provider);
+        if (!okNet) throw new Error("WRONG_NETWORK");
+
+        const dayId = utcDayIdNow();
+        const expiresInSec = Number(document.getElementById("expInput").value || "900");
+        logLine("Requesting signature payload…", { user: userAddr, dayId, expiresInSec });
+
+        setStatus("Signing payload…");
+        const payload = await postSignPayload({ user: userAddr, dayId, expiresInSec });
+
+        // Hard checks (prevents off-by-one issues)
+        if (Number(payload.dayId) !== Number(dayId)) {
+          throw new Error(`DAYID_MISMATCH (client ${dayId} vs signer ${payload.dayId})`);
+        }
+        const nowSec = Math.floor(Date.now()/1000);
+        if (Number(payload.expiresAt) <= nowSec) {
+          throw new Error(`SIGNATURE_EXPIRED (expiresAt ${payload.expiresAt}, now ${nowSec})`);
+        }
+
+        logLine("Signer payload:", payload);
+
+        setStatus("Sending tx…");
+        const c = new ethers.Contract(PNR_CONTRACT, PNR_ABI, signer);
+
+        // Contract call you asked for:
+        // claim(dayId, videoIdBytes32, expiresAt, sig)
+        const tx = await c.claim(
+          Number(payload.dayId),
+          payload.videoIdBytes32,
+          Number(payload.expiresAt),
+          payload.sig
+        );
+
+        logLine("Tx sent:", tx.hash);
+        setStatus("Waiting confirmation…");
+
+        const receipt = await tx.wait();
+        logLine("Confirmed in block", receipt.blockNumber);
+        setStatus("Claim successful ✅", true);
+      } catch (e) {
+        setStatus("Claim failed", false);
+        logLine("Claim error:", e.message || e);
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+{
+  "name": "dreamplay-pnr-live",
+  "private": true,
+  "version": "1.0.0",
+  "description": "DreamPlay PNR claim page + Netlify signer function",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "ethers": "^5.7.2"
+  }
+}
